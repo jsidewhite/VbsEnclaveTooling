@@ -25,11 +25,11 @@ struct ChallengeAndContext
 
 ChallengeAndContext GetChallengeCallback()
 {
-    std::promise<blob> promiseChallenge;
-    std::promise<blob> promiseAttestationReport;
+    auto promiseChallenge = std::promise<blob>();
+    auto promiseAttestationReport = std::make_unique<std::promise<blob>>();
 
     auto futureChallenge = promiseChallenge.get_future();
-    auto futureAttestationReport = promiseAttestationReport.get_future();
+    auto futureAttestationReport = promiseAttestationReport->get_future();
 
     auto spPromise = std::make_shared<std::promise<blob>>(std::move(promiseChallenge));
     auto spFuture = std::make_shared<std::future<blob>>(std::move(futureAttestationReport));
@@ -68,20 +68,23 @@ ChallengeAndContext GetChallengeCallback()
 
     auto challenge = futureChallenge.get();
 
+    auto futureSecurityPropertiesPtr = std::make_unique<std::future<EncryptedSecurityProperties>>(std::move(futureSecurityProperties));
+
     auto challengeAndContext = ChallengeAndContext
     {
         std::move(challenge),
-        0,
-        0
-        //(uintptr_t)promiseAttestationReport.get(),
-        //(uintptr_t)futureSecurityProperties.get()
+        (uintptr_t)promiseAttestationReport.release(),
+        (uintptr_t)futureSecurityPropertiesPtr.release()
     };
     return challengeAndContext;
 }
 
-EncryptedSecurityProperties CreateRecallKeyCallback(blob sealedAttestationReport, std::promise<blob> promiseAttestationReport, std::future<EncryptedSecurityProperties> futureSecurityProperties) noexcept
+EncryptedSecurityProperties CreateRecallKeyCallback(blob sealedAttestationReport, uintptr_t promiseAttestationReportPtr, uintptr_t futureSecurityPropertiesPtr) noexcept
 {
-    promiseAttestationReport.set_value(sealedAttestationReport);
-    auto securityProperties = futureSecurityProperties.get();
+    auto promiseAttestationReport = std::unique_ptr<std::promise<blob>>((std::promise<blob>*)promiseAttestationReportPtr);
+    auto futureSecurityProperties = std::unique_ptr<std::future<EncryptedSecurityProperties>>((std::future<EncryptedSecurityProperties>*)futureSecurityPropertiesPtr);
+
+    promiseAttestationReport->set_value(sealedAttestationReport);
+    auto securityProperties = futureSecurityProperties->get();
     return securityProperties;
 }
