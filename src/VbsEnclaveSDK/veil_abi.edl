@@ -9,6 +9,10 @@ enclave
             uint64_t taskpool_instance_vtl1,
             uint64_t task_id
         );
+
+        // hello user bound key
+        vector<uint8_t> userboundkey_get_attestation_report(
+            vector<uint8_t> challenge);
     };
 
     untrusted

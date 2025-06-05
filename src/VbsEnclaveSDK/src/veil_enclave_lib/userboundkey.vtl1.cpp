@@ -37,10 +37,21 @@ API to derive KEK (Create flow only)
 BCRYPT_KEY_HANDLE DeriveKEKForUserBoundKey(BCRYPT_KEY_HANDLE sharedSecret);
 */
 
+std::vector<uint8_t> GetAttestationReportForUserBoundKey(std::vector<uint8_t> challenge, std::array<uint8_t, 32> sessionKey); // Returns attestation report encrypted for NGC containing session key and challenge
+
 #define CACHE_CONFIG int
 #define OTHER_CONFIG int
 std::vector<uint8_t> GetKEKFromCreateAuthContext(BCRYPT_KEY_HANDLE enclavePrivateKey, std::wstring keyName, CACHE_CONFIG expectedCacheConfig, OTHER_CONFIG expectedConfig, std::vector<uint8_t> authContextBlob); // returns KEK
 
+
+namespace veil_abi::VTL1_Declarations
+{
+    std::vector<std::uint8_t> userboundkey_get_attestation_report(_In_ const std::vector<std::uint8_t>& challenge)
+    {
+        auto sessionKeyBytes = veil::vtl1::crypto::generate_symmetric_key_bytes();
+        return GetAttestationReportForUserBoundKey(challenge, sessionKeyBytes);
+    }
+}
 
 namespace veil::vtl1::userboundkey
 {
@@ -49,6 +60,9 @@ namespace veil::vtl1::userboundkey
         uint8_t nonce[veil::vtl1::crypto::NONCE_SIZE];
         uint8_t tag[veil::vtl1::crypto::TAG_SIZE];
         uint8_t key[veil::vtl1::crypto::SYMMETRIC_KEY_SIZE_BYTES];
+        uint8_t ephemeralKey[veil::vtl1::crypto::SYMMETRIC_KEY_SIZE_BYTES];
+        //uint8_t keyName[sizeof(uint64_t)]; // todo
+        //uint8_t keyUsage[sizeof(uint64_t)]; // todo
 
         // Implicit conversion operator to std::span
         operator std::span<uint8_t const>() const
@@ -57,7 +71,12 @@ namespace veil::vtl1::userboundkey
         }
     };
 
-    void enclave_load_user_bound_key(const std::wstring& keyName, const std::wstring& /*flags*/, const std::wstring& /*cache*/, const std::vector<uint8_t>& keyMaterial22)
+    wil::secure_vector<uint8_t> enclave_load_user_bound_key(
+        const std::wstring& keyName,
+        const std::wstring& /* flags */,
+        const std::wstring& /* cache */,
+        const std::optional<std::vector<uint8_t>> maybeKeyMaterial,
+        std::vector<uint8_t>& /* resealedMaterial */)
     {
         // Session
         auto authContext = veil_abi::VTL0_Callbacks::userboundkey_establish_session_callback(keyName); // "Callback 1"
@@ -65,8 +84,11 @@ namespace veil::vtl1::userboundkey
         // EPHEMERAL
         wil::unique_bcrypt_key ephemeralKeyPair = veil::vtl1::crypto::bcrypt_generate_ecdh_key_pair();
 
+        // EPHEMERAL PUBLIC
+        std::vector<uint8_t> ephemeralPublicKeyBytes = veil::vtl1::crypto::bcrypt_export_public_key(ephemeralKeyPair.get());
+
         // ECHD + KEK
-        auto kekBytes = GetKEKFromCreateAuthContext(ephemeralKeyPair.get(), keyName, 1, 1, authContext);
+        auto kekBytes = GetKEKFromCreateAuthContext(ephemeralKeyPair.get(), keyName, 1, 1, authContext);  // !!!!!!!! OS CALL !!!!!!!!
         auto kek = veil::vtl1::crypto::bcrypt_import_key_pair(kekBytes);
 
         // USERKEY
@@ -79,36 +101,14 @@ namespace veil::vtl1::userboundkey
         // KEY_MATERIAL
         encrypted_symmetric_key_information keyMaterial;
         veil::vtl1::copy_span(nonce, keyMaterial.nonce);
-        veil::vtl1::copy_span(userkeyEncrypted, keyMaterial.key);
         veil::vtl1::copy_span(tag, keyMaterial.tag);
+        veil::vtl1::copy_span(userkeyEncrypted, keyMaterial.key);
+        veil::vtl1::copy_span(ephemeralPublicKeyBytes, keyMaterial.ephemeralKey);
 
-        // Seal
+        // SEAL
         auto sealedKeyMaterial = veil::vtl1::crypto::seal_data(keyMaterial, ENCLAVE_IDENTITY_POLICY_SEAL_SAME_IMAGE, ENCLAVE_RUNTIME_POLICY_ALLOW_FULL_DEBUG);
 
-
-        /*
-        BCryptGenerateRandomKeyPair();
-
-        GetAttestationReport();
-
-        EnclaveEncryptDataForTrustlet();
-
-        // ******
-        // NCryptEncrypt x 3
-        // ******
-
-        NewClass::CreateRecallKeyCallback(std::async a, std::promise p2, std::future f3);
-
-        ECDH();
-
-        DeriveKEK();
-
-        EncryptWithKey();
-
-        Seal();
-
-        Newclass::StorageCallback(sealEnc, pubECDH);
-        */
+        return sealedKeyMaterial;
     }
 }
 
