@@ -6,82 +6,38 @@
 #include <tuple>
 #include <vector>
 
+#include <VbsEnclave\HostApp\Stubs.h>
+
 #include "keycredentialmanager.vtl0.h"
 
-
-struct EncryptedSecurityProperties
+std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_establish_session_callback(_In_ const std::wstring& key_name)
 {
-    blob secureIdMatchesOwnerId;
-    blob encryptedCacheConfiguration;
-    blob publicKey;
-};
+    auto cacheConfiguration = KeyCredentialCacheConfiguration(
+        KeyCredentialCacheOption::NoCache,
+        300, // KeyCredentialCacheTimeout
+        5); // KeyCredentialCacheUsageCount
 
-struct ChallengeAndContext
-{
-    blob challenge;
-    uintptr_t promiseAttestationReport; //std::promise<blob>;
-    uintptr_t futureSecurityProperties; //std::future<EncryptedSecurityProperties>;
-};
-
-
-namespace veil::vtl0::implementation::callins
-{
-    ChallengeAndContext GetChallengeCallback()
-    {
-        auto cacheConfiguration = KeyCredentialCacheConfiguration(
-            KeyCredentialCacheOption::NoCache,
-            300, // KeyCredentialCacheTimeout
-            5); // KeyCredentialCacheUsageCount
-
-        auto credential = RequestCreateAsync(
-            L"myCredential",
-            KeyAlgorithmNames::Ecdh384,
-            KeyCredentialCreationOption::FailIfExists,
-            cacheConfiguration,
-            [p = std::move(p), f = std::move(f)](const auto& challenge) mutable
-            {
-                p->set_value(challenge);
-
-                // VBS enclave application gets sealed attestation report with challenge
-                auto attestationReport = f.get();
-                return attestationReport;
-            }
-        ).get();
-
-        auto secureIdAndOwnerIdMatch = credential.RetrieveSecureIdOwnerIdMatchResult();
-        auto credentialCacheConfiguration = credential.RetrieveCacheConfiguration();
-        auto credentialPublicKey = credential.RetrievePublicKey();
-
-        // Let VBS enclave application verifies that the IDs and credential cache config are as expected
-        return EncryptedSecurityProperties {
-            secureIdAndOwnerIdMatch,
-            credentialCacheConfiguration,
-            credentialPublicKey
-        };
-
-        auto challenge = futureChallenge.get();
-
-        auto futureSecurityPropertiesPtr = std::make_unique<std::future<EncryptedSecurityProperties>>(std::move(futureSecurityProperties));
-
-        // Return to enclave
-        return ChallengeAndContext 
+    auto credential = RequestCreateAsync(
+        L"myCredential",
+        KeyAlgorithmNames::Ecdh384,
+        KeyCredentialCreationOption::FailIfExists,
+        cacheConfiguration,
+        [](const auto& challenge) mutable
         {
-            std::move(challenge),
-            (uintptr_t)promiseAttestationReport.release(),
-            (uintptr_t)futureSecurityPropertiesPtr.release()
-        };
-    }
+            auto enclaveInterface = veil_abi::VTL0_Stubs::export_interface(nullptr);
+            auto attestationReport = enclaveInterface.userboundkey_get_attestation_report(challenge);  // !!! call into enclave !!!
+            return attestationReport;
+        }
+    ).get();
 
-    EncryptedSecurityProperties CreateRecallKeyCallback(blob sealedAttestationReport, uintptr_t promiseAttestationReportPtr, uintptr_t futureSecurityPropertiesPtr) noexcept
-    {
-        auto promiseAttestationReport = std::unique_ptr<std::promise<blob>>((std::promise<blob>*)promiseAttestationReportPtr);
-        auto futureSecurityProperties = std::unique_ptr<std::future<EncryptedSecurityProperties>>((std::future<EncryptedSecurityProperties>*)futureSecurityPropertiesPtr);
+    auto secureIdAndOwnerIdMatch = credential.RetrieveSecureIdOwnerIdMatchResult();
+    auto credentialCacheConfiguration = credential.RetrieveCacheConfiguration();
+    auto credentialPublicKey = credential.RetrievePublicKey();
 
-        // Resume the std::async thread to give the AttestationReport to NGC
-        promiseAttestationReport->set_value(sealedAttestationReport);
+    std::vector<std::uint8_t> authBlob;
+    authBlob.insert(authBlob.end(), secureIdAndOwnerIdMatch.begin(), secureIdAndOwnerIdMatch.end());
+    authBlob.insert(authBlob.end(), credentialCacheConfiguration.begin(), credentialCacheConfiguration.end());
+    authBlob.insert(authBlob.end(), credentialPublicKey.begin(), credentialPublicKey.end());
 
-        // Wait for NGC to return and give us the security properties
-        auto securityProperties = futureSecurityProperties->get();
-        return securityProperties;
-    }
+    return authBlob;
 }
