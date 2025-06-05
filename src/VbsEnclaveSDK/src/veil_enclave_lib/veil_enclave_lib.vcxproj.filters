@@ -53,6 +53,9 @@
     <ClCompile Include="vtl0_functions.vtl1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="userboundkey.vtl1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

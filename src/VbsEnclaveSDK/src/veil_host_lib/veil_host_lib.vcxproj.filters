@@ -30,7 +30,10 @@
     <ClCompile Include="vtl0_functions.vtl0.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="hello_winrt.vtl0.cpp">
+    <ClCompile Include="hello_winrt_glue.vtl0.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hello_winrt_glue_reentrant.vtl0.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

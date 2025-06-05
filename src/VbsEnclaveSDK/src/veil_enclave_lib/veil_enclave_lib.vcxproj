@@ -129,6 +129,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="taskpool.vtl1.cpp" />
+    <ClCompile Include="userboundkey.vtl1.cpp" />
     <ClCompile Include="vtl0_functions.vtl1.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

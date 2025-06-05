@@ -44,6 +44,10 @@ enclave
             wstring log,
             wstring log_file_path
         );
+
+        // hello user bound key
+        vector<uint8_t> userboundkey_establish_session(
+            wstring key_name);
     };
 
 };

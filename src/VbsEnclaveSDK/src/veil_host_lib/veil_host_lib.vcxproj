@@ -130,7 +130,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="enclave_api.vtl0.cpp" />
-    <ClCompile Include="hello_winrt.vtl0.cpp" />
+    <ClCompile Include="hello_winrt_glue.vtl0.cpp" />
+    <ClCompile Include="hello_winrt_glue_reentrant.vtl0.cpp" />
     <ClCompile Include="taskpool.vtl0.cpp" />
     <ClCompile Include="logger.vtl0.cpp" />
     <ClCompile Include="utils.vtl0.cpp" />
