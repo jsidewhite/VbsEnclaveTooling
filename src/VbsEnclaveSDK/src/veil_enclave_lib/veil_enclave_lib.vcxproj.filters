@@ -39,6 +39,9 @@
     <ClInclude Include="logger.vtl1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vengcdll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
