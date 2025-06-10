@@ -1,13 +1,9 @@
 #include "pch.h"
-
-#include <string>
-
 #include <VbsEnclave\Enclave\Implementations.h>
-
-#include "vengcdll.h"
-
 #include "crypto.vtl1.h"
 #include "utils.vtl1.h"
+
+#include "vengcdll.h" // OS APIs
 
 namespace veil_abi::VTL1_Declarations
 {
@@ -15,15 +11,7 @@ namespace veil_abi::VTL1_Declarations
     {
         uint8_t* reportPtr = nullptr;
         size_t reportSize = 0;
-
-        // OS CALL
-        THROW_IF_FAILED(GetAttestationReportForUserBoundKey(
-            const_cast<uint8_t*>(challenge.data()),
-            challenge.size(),
-            &reportPtr,
-            &reportSize
-        ));
-
+        THROW_IF_FAILED(GetAttestationReportForUserBoundKey(const_cast<uint8_t*>(challenge.data()), challenge.size(), &reportPtr, &reportSize)); // OS CALL
         std::vector<uint8_t> report(reportPtr, reportPtr + reportSize);
         CoTaskMemFree(reportPtr);
         return report;
@@ -38,10 +26,7 @@ namespace veil::vtl1::userboundkey
         uint8_t tag[veil::vtl1::crypto::TAG_SIZE];
         uint8_t key[veil::vtl1::crypto::SYMMETRIC_KEY_SIZE_BYTES];
         uint8_t ephemeralKey[veil::vtl1::crypto::SYMMETRIC_KEY_SIZE_BYTES];
-        //uint8_t keyName[sizeof(uint64_t)]; // todo?
-        //uint8_t keyUsage[sizeof(uint64_t)]; // todo?
 
-        // Implicit conversion operator to std::span
         operator std::span<uint8_t const>() const
         {
             return {reinterpret_cast<uint8_t const*>(this), sizeof(encrypted_symmetric_key_information)};
