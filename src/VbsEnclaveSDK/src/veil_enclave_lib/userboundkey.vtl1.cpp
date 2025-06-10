@@ -7,10 +7,9 @@
 #include "crypto.vtl1.h"
 #include "utils.vtl1.h"
 
+//
 // New OS dll (in VTL1) exports
-//#define CACHE_CONFIG int
-#define OTHER_CONFIG int
-//std::vector<uint8_t> GetKEKFromCreateAuthContext(BCRYPT_KEY_HANDLE enclavePrivateKey, std::wstring keyName, CACHE_CONFIG expectedCacheConfig, OTHER_CONFIG expectedConfig, std::vector<uint8_t> authContextBlob); // returns KEK
+//
 
 // Attestation report generation API for user bound keys.
 // Generates a session key, passes session key and provided challenge to EnclaveGetAttestationReport,
@@ -74,6 +73,7 @@ namespace veil_abi::VTL1_Declarations
         uint8_t* reportPtr = nullptr;
         size_t reportSize = 0;
 
+        // OS CALL
         THROW_IF_FAILED(GetAttestationReportForUserBoundKey(
             const_cast<uint8_t*>(challenge.data()),
             challenge.size(),
@@ -114,7 +114,7 @@ namespace veil::vtl1::userboundkey
         std::vector<uint8_t>& /* resealedMaterial */)
     {
         // Session
-        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_callback(keyName); // "Callback 1"
+        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_callback(keyName);
 
         // EPHEMERAL
         wil::unique_bcrypt_key ephemeralKeyPair = veil::vtl1::crypto::bcrypt_generate_ecdh_key_pair();
@@ -124,28 +124,26 @@ namespace veil::vtl1::userboundkey
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
-        THROW_IF_FAILED(GetAuthContextForUserBoundKeyCreation(keyName.c_str(), ephemeralKeyPair.get(), authContextBlob.data(), authContextBlob.size(), &authContext)); // !!!!!!!! OS CALL !!!!!!!!
-        //auto kekBytes = GetAuthContextForUserBoundKeyCreation(keyName.c_str(), ephemeralKeyPair.get(), authContextBlob.get(), authContextBlob.size(), &authContext); // !!!!!!!! OS CALL !!!!!!!!
-        //auto kek = veil::vtl1::crypto::bcrypt_import_key_pair(kekBytes);
+        THROW_IF_FAILED(GetAuthContextForUserBoundKeyCreation(keyName.c_str(), ephemeralKeyPair.get(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
 
         // Validate
         std::wstring keyNameFromNgc(keyName.size() + 1, L'\0');
-        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, KeyName, (void**)keyNameFromNgc.data(), nullptr));
+        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, KeyName, (void**)keyNameFromNgc.data(), nullptr)); // OS CALL
         THROW_HR_IF(E_FAIL, keyNameFromNgc != keyName);
 
         // Validate
         CACHE_CONFIG cacheConfigFromNgc;
-        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, CacheConfig, (void**)&cacheConfigFromNgc, nullptr));
+        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, CacheConfig, (void**)&cacheConfigFromNgc, nullptr)); // OS CALL
         THROW_HR_IF(E_FAIL, &cacheConfigFromNgc != &cacheConfig);
 
         // Validate
         bool secureIdIsOwnerId;
-        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, SecureIdIsOwnerId, (void**)&secureIdIsOwnerId, nullptr));
+        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, SecureIdIsOwnerId, (void**)&secureIdIsOwnerId, nullptr)); // OS CALL
         THROW_HR_IF(E_FAIL, !secureIdIsOwnerId);
 
         // ECHD + KEK
         std::vector<uint8_t>keyEncryptionKeyBytes(256);
-        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, KeyEncryptionKey, (void**)keyEncryptionKeyBytes.data(), nullptr));
+        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, KeyEncryptionKey, (void**)keyEncryptionKeyBytes.data(), nullptr)); // OS CALL
         auto kek = veil::vtl1::crypto::bcrypt_import_key_pair(keyEncryptionKeyBytes);
 
         // USERKEY
