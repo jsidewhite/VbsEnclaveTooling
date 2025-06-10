@@ -2,7 +2,6 @@
 #include <VbsEnclave\Enclave\Implementations.h>
 #include "crypto.vtl1.h"
 #include "utils.vtl1.h"
-
 #include "vengcdll.h" // OS APIs
 
 namespace veil_abi::VTL1_Declarations
@@ -33,10 +32,7 @@ namespace veil::vtl1::userboundkey
         }
     };
 
-    wil::secure_vector<uint8_t> enclave_create_user_bound_key(
-        const std::wstring& keyName,
-        CACHE_CONFIG cacheConfig,
-        ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
+    wil::secure_vector<uint8_t> enclave_create_user_bound_key(const std::wstring& keyName, CACHE_CONFIG cacheConfig, ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
     {
         // Session
         auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_callback(keyName);
