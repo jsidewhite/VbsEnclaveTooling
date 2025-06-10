@@ -35,11 +35,8 @@ namespace veil::vtl1::userboundkey
 
     wil::secure_vector<uint8_t> enclave_create_user_bound_key(
         const std::wstring& keyName,
-        const std::wstring& /* flags */,
         CACHE_CONFIG cacheConfig,
-        ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy,
-        const std::optional<std::vector<uint8_t>> /*maybeKeyMaterial*/,
-        std::vector<uint8_t>& /* resealedMaterial */)
+        ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
     {
         // Session
         auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_callback(keyName);
@@ -74,6 +71,8 @@ namespace veil::vtl1::userboundkey
         THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, KeyEncryptionKey, (void**)keyEncryptionKeyBytes.data(), nullptr)); // OS CALL
         auto kek = veil::vtl1::crypto::bcrypt_import_key_pair(keyEncryptionKeyBytes);
 
+        CloseUserBoundKeyAuthContextHandle(authContext); // OS CALL
+
         // USERKEY
         auto userkeyBytes = veil::vtl1::crypto::generate_symmetric_key_bytes();
 
@@ -90,7 +89,6 @@ namespace veil::vtl1::userboundkey
 
         // SEAL
         auto sealedKeyMaterial = veil::vtl1::crypto::seal_data(keyMaterial, sealingPolicy, ENCLAVE_RUNTIME_POLICY_ALLOW_FULL_DEBUG);
-
         return sealedKeyMaterial;
     }
 }

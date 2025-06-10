@@ -20,6 +20,9 @@ HRESULT GetAttestationReportForUserBoundKey(
 // Auth Context APIs
 typedef void* USER_BOUND_KEY_AUTH_CONTEXT_HANDLE;
 
+BOOL CloseUserBoundKeyAuthContextHandle(
+    USER_BOUND_KEY_AUTH_CONTEXT_HANDLE handle);
+
 struct CACHE_CONFIG {
     uint32_t cacheType;
     uint32_t cacheTimeout;
