@@ -62,3 +62,9 @@ std::future<CreatedCredential> RequestCreateAsync(
     const KeyCredentialCacheConfiguration& cacheConfig,
     AuthenticatedSessionChallengeCallback&& challengeCallback);
 
+// Asynchronous function to open a credential and perform authenticated challenge.
+template <typename AuthenticatedSessionChallengeCallback>
+std::future<CreatedCredential> RequestOpenAsync(
+    const std::wstring& credentialName,
+    AuthenticatedSessionChallengeCallback&& challengeCallback);
+
