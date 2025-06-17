@@ -10,7 +10,7 @@
 // Attestation report generation API for user bound keys.
 // Generates a session key, passes session key and provided challenge to EnclaveGetAttestationReport,
 // encrypts the attestation report with EnclaveEncryptDataForTrustlet, returns the encrypted report. 
-HRESULT GetAttestationReportForUserBoundKey(
+HRESULT InitializeUserBoundKeySessionInfo(
     _In_ uint8_t* challenge,
     _In_ size_t challengeSize,
     _Out_ uint8_t** report,
@@ -48,7 +48,7 @@ HRESULT GetUserBoundKeyAuthContextProperty(
 // Performs key establishment using the enclave key handle provided, along with the
 // corresponding key from the NGC side (present in the auth context blob).
 // Computes the key encryption key (KEK) for the user bound key.
-HRESULT GetAuthContextForUserBoundKeyCreation(
+HRESULT GetUserBoundKeyCreationAuthContext(
     _In_ PCWSTR keyName,
     _In_ BCRYPT_KEY_HANDLE enclaveKey, // The enclave key handle used to to perform key establishment.
     _In_ uint8_t* authContextBlob, // auth context generated as part of RequestCreateAsync
@@ -58,7 +58,7 @@ HRESULT GetAuthContextForUserBoundKeyCreation(
 
 // Called as part of the flow when loading an existing user bound key.
 // Decrypts the auth context blob provided by NGC, verifies that the keyname matches the one in the auth context blob.
-HRESULT GetAuthContextForUserBoundKeyLoading(
+HRESULT GetUserBoundKeyLoadingAuthContext(
     _In_ PCWSTR keyName,
     _In_ uint8_t* authContextBlob, // auth context generated as part of RequestCreateAsync 
     _In_ size_t authContextBlobSize,

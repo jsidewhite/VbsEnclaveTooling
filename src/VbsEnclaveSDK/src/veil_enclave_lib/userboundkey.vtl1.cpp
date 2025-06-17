@@ -10,7 +10,7 @@ namespace veil_abi::VTL1_Declarations
     {
         uint8_t* reportPtr = nullptr;
         size_t reportSize = 0;
-        THROW_IF_FAILED(GetAttestationReportForUserBoundKey(const_cast<uint8_t*>(challenge.data()), challenge.size(), &reportPtr, &reportSize)); // OS CALL
+        THROW_IF_FAILED(InitializeUserBoundKeySessionInfo(const_cast<uint8_t*>(challenge.data()), challenge.size(), &reportPtr, &reportSize)); // OS CALL
         std::vector<uint8_t> report(reportPtr, reportPtr + reportSize);
         CoTaskMemFree(reportPtr);
         return report;
@@ -45,7 +45,7 @@ namespace veil::vtl1::userboundkey
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
-        THROW_IF_FAILED(GetAuthContextForUserBoundKeyCreation(keyName.c_str(), ephemeralKeyPair.get(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
+        THROW_IF_FAILED(GetUserBoundKeyCreationAuthContext(keyName.c_str(), ephemeralKeyPair.get(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
 
         // Validate
         std::wstring keyNameFromNgc(keyName.size() + 1, L'\0');

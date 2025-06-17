@@ -17,7 +17,7 @@ std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_e
         300, // KeyCredentialCacheTimeout
         5); // KeyCredentialCacheUsageCount
 
-    auto credential = RequestCreateAsync(
+    auto credential = winrt::Windows::Security::Credentials::RequestCreateAsync(
         L"myCredential",
         KeyAlgorithmNames::Ecdh384,
         KeyCredentialCreationOption::FailIfExists,
@@ -44,7 +44,7 @@ std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_e
 
 std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_open_session_callback(_In_ const std::wstring& key_name)
 {
-    auto credential = RequestOpenAsync(
+    auto credential = winrt::Windows::Security::Credentials::RequestOpenAsync(
         L"myCredential",
         [] (const auto& challenge) mutable
     {

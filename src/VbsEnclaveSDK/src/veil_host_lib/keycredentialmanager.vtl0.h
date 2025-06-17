@@ -53,18 +53,21 @@ public:
     blob RetrievePublicKey() const;
 };
 
-// Asynchronous function to create a credential and perform authenticated challenge.
-template <typename AuthenticatedSessionChallengeCallback>
-std::future<CreatedCredential> RequestCreateAsync(
-    const std::wstring& credentialName,
-    const std::wstring& algorithm,
-    KeyCredentialCreationOption creationOption,
-    const KeyCredentialCacheConfiguration& cacheConfig,
-    AuthenticatedSessionChallengeCallback&& challengeCallback);
+namespace winrt::Windows::Security::Credentials
+{
+    // Asynchronous function to create a credential and perform authenticated challenge.
+    template <typename AuthenticatedSessionChallengeCallback>
+    std::future<CreatedCredential> RequestCreateAsync(
+        const std::wstring& credentialName,
+        const std::wstring& algorithm,
+        KeyCredentialCreationOption creationOption,
+        const KeyCredentialCacheConfiguration& cacheConfig,
+        AuthenticatedSessionChallengeCallback&& challengeCallback);
 
-// Asynchronous function to open a credential and perform authenticated challenge.
-template <typename AuthenticatedSessionChallengeCallback>
-std::future<CreatedCredential> RequestOpenAsync(
-    const std::wstring& credentialName,
-    AuthenticatedSessionChallengeCallback&& challengeCallback);
+    // Asynchronous function to open a credential and perform authenticated challenge.
+    template <typename AuthenticatedSessionChallengeCallback>
+    std::future<CreatedCredential> RequestOpenAsync(
+        const std::wstring& credentialName,
+        AuthenticatedSessionChallengeCallback&& challengeCallback);
+}
 
