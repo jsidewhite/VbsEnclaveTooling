@@ -4,7 +4,7 @@
 #define VENGCDLL_H
 
 //
-// New OS dll (in VTL1) exports
+// Exports for vengcdll.dll (new OS DLL in VTL1)
 //
 
 // Attestation report generation API for user bound keys.
@@ -30,18 +30,8 @@ struct CACHE_CONFIG {
 };
 
 enum UserBoundKeyAuthContextProperties {
-    KeyName = 0, // The name of the user bound key, encoded as a UTF-8 string.
-    KeyEncryptionKey = 1, // The KEK used to encrypt the user bound key, encoded as a byte array.
-    CacheConfig = 2, // The cache configuration for the user bound key, encoded as a CACHE_CONFIG structure.
-    SecureIdIsOwnerId = 3, // boolean, indicating whether the SecureId of the NGC key matches the OwnerId of the enclave.
+    CacheConfig = 0, // The cache configuration for the user bound key, encoded as a CACHE_CONFIG structure
 };
-
-HRESULT GetUserBoundKeyAuthContextProperty(
-    _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
-    _In_ UserBoundKeyAuthContextProperties property,
-    _Out_ void** value,
-    _Out_ size_t* valueSize
-);
 
 // Called as part of the flow when creating a new user bound key.
 // Decrypts the auth context blob provided by NGC, verifies that the keyname matches the one in the auth context blob,
@@ -63,6 +53,37 @@ HRESULT GetUserBoundKeyLoadingAuthContext(
     _In_ uint8_t* authContextBlob, // auth context generated as part of RequestCreateAsync 
     _In_ size_t authContextBlobSize,
     _Out_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE* authContextHandle
+);
+
+struct UserBoundKeyAuthContextProperty
+{
+    UserBoundKeyAuthContextProperties name;
+    size_t size;
+    uint8_t* value;
+};
+
+HRESULT ValidateUserBoundKeyAuthContext(
+    _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContextHandle,
+    _In_ size_t count,
+    _In_ UserBoundKeyAuthContextProperty* values
+);
+
+// Encrypt the user key and produce material to save to disk
+HRESULT ConcealUserBoundKey(
+    _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
+    _In_ uint8_t* userKey,
+    _In_ size_t cbUserKey,
+    _Out_ void** boundKey,
+    _Inout_ size_t* cbBoundKey
+);
+
+// Decrypt the user key from material from disk
+HRESULT RevealUserBoundKey(
+    _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
+    _In_ uint8_t* boundKey,
+    _In_ size_t cbBoundKey,
+    _Out_ void** userKey,
+    _Inout_ size_t* cbUserKey
 );
 
 #endif // VENGCDLL_H

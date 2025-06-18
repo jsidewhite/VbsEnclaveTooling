@@ -50,8 +50,15 @@ enclave
         );
 
         // hello user bound key
-        vector<uint8_t> userboundkey_establish_session(
-            wstring key_name);
+        vector<uint8_t> userboundkey_establish_session_for_create(
+            wstring key_name,
+            uintptr_t ecdh_protocol,
+            uintptr_t window_id
+            );
+
+        vector<uint8_t> userboundkey_establish_session_for_load(
+            wstring key_name,
+            uintptr_t window_id);
     };
 
 };

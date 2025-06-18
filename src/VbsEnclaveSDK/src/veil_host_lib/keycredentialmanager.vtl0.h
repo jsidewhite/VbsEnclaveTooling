@@ -1,5 +1,7 @@
 #pragma once
 
+#include <windows.h>
+
 #include <string>
 #include <functional>
 #include <future>
@@ -48,10 +50,13 @@ enum class KeyCredentialCreationOption {
 class CreatedCredential
 {
 public:
-    blob RetrieveSecureIdOwnerIdMatchResult() const;
-    blob RetrieveCacheConfiguration() const;
-    blob RetrievePublicKey() const;
+    blob RetrieveAuthorizationContext() const;
 };
+
+namespace winrt::Windows::UI
+{
+    using WindowId = HWND;
+}
 
 namespace winrt::Windows::Security::Credentials
 {
@@ -62,12 +67,14 @@ namespace winrt::Windows::Security::Credentials
         const std::wstring& algorithm,
         KeyCredentialCreationOption creationOption,
         const KeyCredentialCacheConfiguration& cacheConfig,
+        winrt::Windows::UI::WindowId windowId,  // Use Windows.UI.WindowId when this is idl'd
         AuthenticatedSessionChallengeCallback&& challengeCallback);
 
     // Asynchronous function to open a credential and perform authenticated challenge.
     template <typename AuthenticatedSessionChallengeCallback>
     std::future<CreatedCredential> RequestOpenAsync(
         const std::wstring& credentialName,
+        winrt::Windows::UI::WindowId windowId,  // Use Windows.UI.WindowId when this is idl'd
         AuthenticatedSessionChallengeCallback&& challengeCallback);
 }
 

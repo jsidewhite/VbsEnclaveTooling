@@ -3,10 +3,10 @@
 #include <functional>
 #include <future>
 #include <string>
-#include <tuple>
-#include <vector>
 
 #include "keycredentialmanager.vtl0.h"
+
+/*
 
 
 struct EncryptedSecurityProperties
@@ -92,3 +92,7 @@ namespace veil::vtl0::implementation::callins
         return securityProperties;
     }
 }
+
+
+*/
+

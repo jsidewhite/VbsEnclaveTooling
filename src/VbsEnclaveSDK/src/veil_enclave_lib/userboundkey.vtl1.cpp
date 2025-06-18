@@ -19,72 +19,75 @@ namespace veil_abi::VTL1_Declarations
 
 namespace veil::vtl1::userboundkey
 {
-    struct encrypted_symmetric_key_information
+    wil::secure_vector<uint8_t> enclave_create_user_bound_key(
+        const std::wstring& keyName, 
+        CACHE_CONFIG cacheConfig,
+        HWND windowId,
+        ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
     {
-        uint8_t nonce[veil::vtl1::crypto::NONCE_SIZE];
-        uint8_t tag[veil::vtl1::crypto::TAG_SIZE];
-        uint8_t key[veil::vtl1::crypto::SYMMETRIC_KEY_SIZE_BYTES];
-        uint8_t ephemeralKey[veil::vtl1::crypto::SYMMETRIC_KEY_SIZE_BYTES];
-
-        operator std::span<uint8_t const>() const
-        {
-            return {reinterpret_cast<uint8_t const*>(this), sizeof(encrypted_symmetric_key_information)};
-        }
-    };
-
-    wil::secure_vector<uint8_t> enclave_create_user_bound_key(const std::wstring& keyName, CACHE_CONFIG cacheConfig, ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
-    {
-        // Session
-        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_callback(keyName);
+        // SESSION
+        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_create_callback(keyName, reinterpret_cast<uintptr_t>(BCRYPT_ECDH_P384_ALG_HANDLE), (uintptr_t)windowId);
 
         // EPHEMERAL
-        wil::unique_bcrypt_key ephemeralKeyPair = veil::vtl1::crypto::bcrypt_generate_ecdh_key_pair();
-
-        // EPHEMERAL PUBLIC
-        std::vector<uint8_t> ephemeralPublicKeyBytes = veil::vtl1::crypto::bcrypt_export_public_key(ephemeralKeyPair.get());
+        wil::unique_bcrypt_key ephemeralKeyPair = veil::vtl1::crypto::bcrypt_generate_ecdh_key_pair(BCRYPT_ECDH_P384_ALG_HANDLE);
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
         THROW_IF_FAILED(GetUserBoundKeyCreationAuthContext(keyName.c_str(), ephemeralKeyPair.get(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
 
         // Validate
-        std::wstring keyNameFromNgc(keyName.size() + 1, L'\0');
-        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, KeyName, (void**)keyNameFromNgc.data(), nullptr)); // OS CALL
-        THROW_HR_IF(E_FAIL, keyNameFromNgc != keyName);
-
-        // Validate
-        CACHE_CONFIG cacheConfigFromNgc;
-        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, CacheConfig, (void**)&cacheConfigFromNgc, nullptr)); // OS CALL
-        THROW_HR_IF(E_FAIL, &cacheConfigFromNgc != &cacheConfig);
-
-        // Validate
-        bool secureIdIsOwnerId;
-        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, SecureIdIsOwnerId, (void**)&secureIdIsOwnerId, nullptr)); // OS CALL
-        THROW_HR_IF(E_FAIL, !secureIdIsOwnerId);
-
-        // ECHD + KEK
-        std::vector<uint8_t>keyEncryptionKeyBytes(256);
-        THROW_IF_FAILED(GetUserBoundKeyAuthContextProperty(authContext, KeyEncryptionKey, (void**)keyEncryptionKeyBytes.data(), nullptr)); // OS CALL
-        auto kek = veil::vtl1::crypto::bcrypt_import_key_pair(keyEncryptionKeyBytes);
-
-        CloseUserBoundKeyAuthContextHandle(authContext); // OS CALL
+        UserBoundKeyAuthContextProperty propCacheConfig;
+        propCacheConfig.name = CacheConfig;
+        propCacheConfig.size = sizeof(cacheConfig);
+        propCacheConfig.value = (uint8_t*)&cacheConfig;
+        THROW_IF_FAILED(ValidateUserBoundKeyAuthContext(authContext, 1, &propCacheConfig)); // OS CALL
 
         // USERKEY
         auto userkeyBytes = veil::vtl1::crypto::generate_symmetric_key_bytes();
 
-        // EncryptWithKEK
-        auto nonce = veil::vtl1::crypto::generate_random<sizeof(encrypted_symmetric_key_information::nonce)>();
-        auto [userkeyEncrypted, tag] = veil::vtl1::crypto::encrypt(kek.get(), userkeyBytes, nonce);
+        // ENCRYPT USERKEY
+        size_t cbBoundKeyBytes;
+        std::vector<uint8_t> boundKeyBytes(256);
+        THROW_IF_FAILED(ConcealUserBoundKey(authContext, userkeyBytes.data(), userkeyBytes.size(), (void**)boundKeyBytes.data(), &cbBoundKeyBytes)); // OS CALL
 
-        // KEY_MATERIAL
-        encrypted_symmetric_key_information keyMaterial;
-        veil::vtl1::copy_span(nonce, keyMaterial.nonce);
-        veil::vtl1::copy_span(tag, keyMaterial.tag);
-        veil::vtl1::copy_span(userkeyEncrypted, keyMaterial.key);
-        veil::vtl1::copy_span(ephemeralPublicKeyBytes, keyMaterial.ephemeralKey);
+        CloseUserBoundKeyAuthContextHandle(authContext); // OS CALL
 
         // SEAL
-        auto sealedKeyMaterial = veil::vtl1::crypto::seal_data(keyMaterial, sealingPolicy, ENCLAVE_RUNTIME_POLICY_ALLOW_FULL_DEBUG);
+        auto sealedKeyMaterial = veil::vtl1::crypto::seal_data(boundKeyBytes, sealingPolicy, ENCLAVE_RUNTIME_POLICY_ALLOW_FULL_DEBUG);
         return sealedKeyMaterial;
+    }
+
+    wil::secure_vector<uint8_t> enclave_load_user_bound_key(
+        const std::wstring& keyName,
+        CACHE_CONFIG cacheConfig,
+        HWND windowId,
+        std::vector<uint8_t> sealedBoundKeyBytes)
+    {
+        // UNSEAL
+        auto boundKeyBytesMaterial = veil::vtl1::crypto::unseal_data(sealedBoundKeyBytes);
+        auto& boundKeyBytes = boundKeyBytesMaterial.first;
+
+        // SESSION
+        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_load_callback(keyName, (uintptr_t)windowId);
+
+        // AUTH CONTEXT
+        USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
+        THROW_IF_FAILED(GetUserBoundKeyLoadingAuthContext(keyName.c_str(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
+
+        // Validate
+        UserBoundKeyAuthContextProperty propCacheConfig;
+        propCacheConfig.name = CacheConfig;
+        propCacheConfig.size = sizeof(cacheConfig);
+        propCacheConfig.value = (uint8_t*) &cacheConfig;
+        THROW_IF_FAILED(ValidateUserBoundKeyAuthContext(authContext, 1, &propCacheConfig)); // OS CALL
+
+        // DECRYPT USERKEY
+        size_t cbUserkeyBytes;
+        wil::secure_vector<uint8_t> userkeyBytes(256);
+        THROW_IF_FAILED(RevealUserBoundKey(authContext, boundKeyBytes.data(), boundKeyBytes.size(), (void**)userkeyBytes.data(), &cbUserkeyBytes)); // OS CALL
+
+        CloseUserBoundKeyAuthContextHandle(authContext); // OS CALL
+
+        return userkeyBytes;
     }
 }
