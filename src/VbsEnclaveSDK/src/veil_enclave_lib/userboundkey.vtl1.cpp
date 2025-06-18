@@ -19,8 +19,9 @@ namespace veil_abi::VTL1_Declarations
 
 namespace veil::vtl1::userboundkey
 {
-    wil::secure_vector<uint8_t> enclave_create_user_bound_key(
-        const std::wstring& keyName, 
+    std::pair<wil::secure_vector<uint8_t>, std::vector<uint8_t>>
+    enclave_create_user_bound_key(
+        const std::wstring& keyName,
         CACHE_CONFIG cacheConfig,
         HWND windowId,
         ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
@@ -29,7 +30,12 @@ namespace veil::vtl1::userboundkey
         auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_create_callback(keyName, reinterpret_cast<uintptr_t>(BCRYPT_ECDH_P384_ALG_HANDLE), (uintptr_t)windowId);
 
         // EPHEMERAL
+        //
+        //  Open Question: Have OS API manage ecdh key? i.e. move this into GetUserBoundKeyCreationAuthContext -> echd public key merged into boundKeyBytes
         wil::unique_bcrypt_key ephemeralKeyPair = veil::vtl1::crypto::bcrypt_generate_ecdh_key_pair(BCRYPT_ECDH_P384_ALG_HANDLE);
+
+        // EPHEMERAL PUBLIC
+        std::vector<uint8_t> ephemeralPublicKeyBytes = veil::vtl1::crypto::bcrypt_export_public_key(ephemeralKeyPair.get());
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
@@ -54,21 +60,22 @@ namespace veil::vtl1::userboundkey
 
         // SEAL
         auto sealedKeyMaterial = veil::vtl1::crypto::seal_data(boundKeyBytes, sealingPolicy, ENCLAVE_RUNTIME_POLICY_ALLOW_FULL_DEBUG);
-        return sealedKeyMaterial;
+        return { sealedKeyMaterial, ephemeralPublicKeyBytes };
     }
 
     wil::secure_vector<uint8_t> enclave_load_user_bound_key(
         const std::wstring& keyName,
         CACHE_CONFIG cacheConfig,
         HWND windowId,
-        std::vector<uint8_t> sealedBoundKeyBytes)
+        std::vector<uint8_t> sealedBoundKeyBytes,
+        std::vector<uint8_t> ephemeralPublicKeyBytes)
     {
         // UNSEAL
         auto boundKeyBytesMaterial = veil::vtl1::crypto::unseal_data(sealedBoundKeyBytes);
         auto& boundKeyBytes = boundKeyBytesMaterial.first;
 
         // SESSION
-        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_load_callback(keyName, (uintptr_t)windowId);
+        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_load_callback(keyName, ephemeralPublicKeyBytes, (uintptr_t)windowId);
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;

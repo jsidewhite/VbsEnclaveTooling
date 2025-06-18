@@ -58,6 +58,7 @@ enclave
 
         vector<uint8_t> userboundkey_establish_session_for_load(
             wstring key_name,
+            vector<uint8_t> public_key,
             uintptr_t window_id);
     };
 
