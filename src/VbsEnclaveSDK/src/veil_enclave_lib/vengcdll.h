@@ -40,7 +40,6 @@ enum UserBoundKeyAuthContextProperties {
 // Computes the key encryption key (KEK) for the user bound key.
 HRESULT GetUserBoundKeyCreationAuthContext(
     _In_ PCWSTR keyName,
-    _In_ BCRYPT_KEY_HANDLE enclaveKey, // The enclave key handle used to to perform key establishment.
     _In_ uint8_t* authContextBlob, // auth context generated as part of RequestCreateAsync
     _In_ size_t authContextBlobSize,
     _Out_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE* authContextHandle

@@ -19,6 +19,16 @@ namespace veil_abi::VTL1_Declarations
 
 namespace veil::vtl1::userboundkey
 {
+
+    std::vector<uint8_t> GetEphemeralPublicKeyBytesFromAuthContext(USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext)
+    {
+        // TODO: implemententation
+        size_t keySize = 384;  
+        std::vector<uint8_t> ephemeralPublicKeyBytes(keySize);
+        return ephemeralPublicKeyBytes;
+    }
+
+
     std::pair<wil::secure_vector<uint8_t>, std::vector<uint8_t>>
     enclave_create_user_bound_key(
         const std::wstring& keyName,
@@ -30,17 +40,12 @@ namespace veil::vtl1::userboundkey
         // SESSION
         auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_create_callback(keyName, message, reinterpret_cast<uintptr_t>(BCRYPT_ECDH_P384_ALG_HANDLE), (uintptr_t)windowId);
 
-        // EPHEMERAL
-        //
-        //  Open Question: Have OS API manage ecdh key? i.e. move this into GetUserBoundKeyCreationAuthContext -> echd public key merged into boundKeyBytes
-        wil::unique_bcrypt_key ephemeralKeyPair = veil::vtl1::crypto::bcrypt_generate_ecdh_key_pair(BCRYPT_ECDH_P384_ALG_HANDLE);
-
-        // EPHEMERAL PUBLIC
-        std::vector<uint8_t> ephemeralPublicKeyBytes = veil::vtl1::crypto::bcrypt_export_public_key(ephemeralKeyPair.get());
-
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
-        THROW_IF_FAILED(GetUserBoundKeyCreationAuthContext(keyName.c_str(), ephemeralKeyPair.get(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
+        THROW_IF_FAILED(GetUserBoundKeyCreationAuthContext(keyName.c_str(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
+
+        // Retrieve ephemeralPublicKeyBytes from the authContext
+        std::vector<uint8_t> ephemeralPublicKeyBytes = GetEphemeralPublicKeyBytesFromAuthContext(authContext);
 
         // Validate
         UserBoundKeyAuthContextProperty propCacheConfig;
@@ -56,7 +61,6 @@ namespace veil::vtl1::userboundkey
         size_t cbBoundKeyBytes;
         std::vector<uint8_t> boundKeyBytes(256);
         THROW_IF_FAILED(ConcealUserBoundKey(authContext, userkeyBytes.data(), userkeyBytes.size(), (void**)boundKeyBytes.data(), &cbBoundKeyBytes)); // OS CALL
-
         CloseUserBoundKeyAuthContextHandle(authContext); // OS CALL
 
         // SEAL
