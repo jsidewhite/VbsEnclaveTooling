@@ -16,11 +16,16 @@ std::wstring GetAlgorithm(uintptr_t ecdhAlgorithm)
     {
         return KeyAlgorithmNames::Ecdh384;
     }
+    else if (reinterpret_cast<BCRYPT_ALG_HANDLE>(ecdhAlgorithm) == BCRYPT_ECDH_P256_ALG_HANDLE)
+    {
+        return KeyAlgorithmNames::Ecdh256;
+    }
     THROW_HR(E_INVALIDARG);
 }
 
 std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_establish_session_for_create_callback(
     const std::wstring& key_name,
+    const std::wstring& message,
     uintptr_t ecdhAlgorithm,
     uintptr_t windowId)
 {
@@ -34,6 +39,7 @@ std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_e
     auto credential = winrt::Windows::Security::Credentials::RequestCreateAsync(
         key_name.c_str(),
         algorithm,
+        message,
         KeyCredentialCreationOption::FailIfExists,
         cacheConfiguration,
         (winrt::Windows::UI::WindowId)windowId,
@@ -50,11 +56,13 @@ std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_e
 
 std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_establish_session_for_load_callback(
     const std::wstring& key_name,
+    const std::wstring& message,
     const std::vector<uint8_t>& ephemeralPublicKeyBytes,
     uintptr_t windowId)
 {
     auto credential = winrt::Windows::Security::Credentials::RequestOpenAsync(
         key_name.c_str(),
+        message.c_str(),
         ephemeralPublicKeyBytes,
         (winrt::Windows::UI::WindowId)windowId,
         [] (const auto& challenge) mutable

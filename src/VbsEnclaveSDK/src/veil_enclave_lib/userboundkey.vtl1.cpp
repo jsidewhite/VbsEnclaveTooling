@@ -22,12 +22,13 @@ namespace veil::vtl1::userboundkey
     std::pair<wil::secure_vector<uint8_t>, std::vector<uint8_t>>
     enclave_create_user_bound_key(
         const std::wstring& keyName,
+        const std::wstring& message,
         CACHE_CONFIG cacheConfig,
         HWND windowId,
         ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
     {
         // SESSION
-        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_create_callback(keyName, reinterpret_cast<uintptr_t>(BCRYPT_ECDH_P384_ALG_HANDLE), (uintptr_t)windowId);
+        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_create_callback(keyName, message, reinterpret_cast<uintptr_t>(BCRYPT_ECDH_P384_ALG_HANDLE), (uintptr_t)windowId);
 
         // EPHEMERAL
         //
@@ -65,6 +66,7 @@ namespace veil::vtl1::userboundkey
 
     wil::secure_vector<uint8_t> enclave_load_user_bound_key(
         const std::wstring& keyName,
+        const std::wstring& message,
         CACHE_CONFIG cacheConfig,
         HWND windowId,
         std::vector<uint8_t> sealedBoundKeyBytes,
@@ -75,7 +77,7 @@ namespace veil::vtl1::userboundkey
         auto& boundKeyBytes = boundKeyBytesMaterial.first;
 
         // SESSION
-        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_load_callback(keyName, ephemeralPublicKeyBytes, (uintptr_t)windowId);
+        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_load_callback(keyName, message, ephemeralPublicKeyBytes, (uintptr_t)windowId);
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;

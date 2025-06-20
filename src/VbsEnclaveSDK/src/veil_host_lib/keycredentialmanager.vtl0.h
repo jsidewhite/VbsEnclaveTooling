@@ -38,6 +38,7 @@ struct KeyCredentialCacheConfiguration
 // Placeholder types to match usage.
 namespace KeyAlgorithmNames {
     inline const std::wstring Ecdh384 = L"ECDH384";
+    inline const std::wstring Ecdh256 = L"ECDH256";
 }
 
 enum class KeyCredentialCreationOption {
@@ -65,6 +66,7 @@ namespace winrt::Windows::Security::Credentials
     std::future<CreatedCredential> RequestCreateAsync(
         const std::wstring& credentialName,
         const std::wstring& algorithm,
+        const std::wstring& message,
         KeyCredentialCreationOption creationOption,
         const KeyCredentialCacheConfiguration& cacheConfig,
         winrt::Windows::UI::WindowId windowId,  // Use Windows.UI.WindowId when this is idl'd
@@ -74,6 +76,7 @@ namespace winrt::Windows::Security::Credentials
     template <typename AuthenticatedSessionChallengeCallback>
     std::future<CreatedCredential> RequestOpenAsync(
         const std::wstring& credentialName,
+        const std::wstring& message,
         const std::vector<uint8_t>& ephemeralPublicKeyBytes,
         winrt::Windows::UI::WindowId windowId,  // Use Windows.UI.WindowId when this is idl'd
         AuthenticatedSessionChallengeCallback&& challengeCallback);
