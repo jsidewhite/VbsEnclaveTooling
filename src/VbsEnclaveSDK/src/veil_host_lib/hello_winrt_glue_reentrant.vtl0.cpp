@@ -43,6 +43,7 @@ std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_e
         KeyCredentialCreationOption::FailIfExists,
         cacheConfiguration,
         (winrt::Windows::UI::WindowId)windowId,
+        CallbackType::VBSEnclave,
         [](const auto& challenge) mutable
         {
             auto enclaveInterface = veil_abi::VTL0_Stubs::export_interface(nullptr);
@@ -65,6 +66,7 @@ secretAndAuthorizationContext veil_abi::VTL0_Stubs::export_interface::userboundk
         message.c_str(),
         ephemeralPublicKeyBytes,
         (winrt::Windows::UI::WindowId)windowId,
+        CallbackType::VBSEnclave,
         [] (const auto& challenge) mutable
     {
         auto enclaveInterface = veil_abi::VTL0_Stubs::export_interface(nullptr);
