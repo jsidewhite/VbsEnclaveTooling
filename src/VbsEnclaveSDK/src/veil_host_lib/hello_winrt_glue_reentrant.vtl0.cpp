@@ -25,8 +25,8 @@ std::wstring GetAlgorithm(uintptr_t ecdhAlgorithm)
 
 std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_establish_session_for_create_callback(
     const std::wstring& key_name,
-    const std::wstring& message,
     uintptr_t ecdhAlgorithm,
+    const std::wstring& message,
     uintptr_t windowId)
 {
     auto algorithm = GetAlgorithm(ecdhAlgorithm);
@@ -54,10 +54,10 @@ std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_e
     return credential.RetrieveAuthorizationContext();
 }
 
-std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_establish_session_for_load_callback(
+secretAndAuthorizationContext veil_abi::VTL0_Stubs::export_interface::userboundkey_establish_session_for_load_callback(
     const std::wstring& key_name,
-    const std::wstring& message,
     const std::vector<uint8_t>& ephemeralPublicKeyBytes,
+    const std::wstring& message,
     uintptr_t windowId)
 {
     auto credential = winrt::Windows::Security::Credentials::RequestOpenAsync(
@@ -73,5 +73,5 @@ std::vector<std::uint8_t> veil_abi::VTL0_Stubs::export_interface::userboundkey_e
     }
     ).get();
 
-    return credential.RetrieveAuthorizationContext();
+    return secretAndAuthorizationContext(credential.RequestDeriveSharedSecret(), credential.RetrieveAuthorizationContext());
 }

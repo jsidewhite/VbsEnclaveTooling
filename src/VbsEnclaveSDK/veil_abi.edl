@@ -3,6 +3,12 @@
 
 enclave
 {
+    struct secretAndAuthorizationContext
+    {
+        vector<uint8_t> secret;
+        vector<uint8_t> authorizationContext;
+    };
+
     trusted
     {
         HRESULT taskpool_run_task(
@@ -53,12 +59,14 @@ enclave
         vector<uint8_t> userboundkey_establish_session_for_create(
             wstring key_name,
             uintptr_t ecdh_protocol,
+            wstring message,
             uintptr_t window_id
             );
 
-        vector<uint8_t> userboundkey_establish_session_for_load(
+        secretAndAuthorizationContext userboundkey_establish_session_for_load(
             wstring key_name,
             vector<uint8_t> public_key,
+            wstring message,
             uintptr_t window_id);
     };
 

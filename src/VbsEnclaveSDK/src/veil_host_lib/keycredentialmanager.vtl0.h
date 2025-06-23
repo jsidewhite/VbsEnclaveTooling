@@ -52,6 +52,7 @@ class CreatedCredential
 {
 public:
     blob RetrieveAuthorizationContext() const;
+    std::vector<uint8_t> RequestDeriveSharedSecret() const;
 };
 
 namespace winrt::Windows::UI

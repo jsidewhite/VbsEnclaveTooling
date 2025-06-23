@@ -20,32 +20,26 @@ namespace veil_abi::VTL1_Declarations
 namespace veil::vtl1::userboundkey
 {
 
-    std::vector<uint8_t> GetEphemeralPublicKeyBytesFromAuthContext(USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext)
+    std::vector<uint8_t> GetEphemeralPublicKeyBytesFromBoundKeyBytes(wil::secure_vector<uint8_t> boundKeyBytes)
     {
         // TODO: implemententation
-        size_t keySize = 384;  
-        std::vector<uint8_t> ephemeralPublicKeyBytes(keySize);
-        return ephemeralPublicKeyBytes;
+        return {};
     }
 
 
-    std::pair<wil::secure_vector<uint8_t>, std::vector<uint8_t>>
-    enclave_create_user_bound_key(
+    wil::secure_vector<uint8_t> enclave_create_user_bound_key(
         const std::wstring& keyName,
-        const std::wstring& message,
         CACHE_CONFIG cacheConfig,
+        const std::wstring& message,
         HWND windowId,
         ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
     {
         // SESSION
-        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_create_callback(keyName, message, reinterpret_cast<uintptr_t>(BCRYPT_ECDH_P384_ALG_HANDLE), (uintptr_t)windowId);
+        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_create_callback(keyName, reinterpret_cast<uintptr_t>(BCRYPT_ECDH_P384_ALG_HANDLE), message, (uintptr_t)windowId);
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
         THROW_IF_FAILED(GetUserBoundKeyCreationAuthContext(keyName.c_str(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
-
-        // Retrieve ephemeralPublicKeyBytes from the authContext
-        std::vector<uint8_t> ephemeralPublicKeyBytes = GetEphemeralPublicKeyBytesFromAuthContext(authContext);
 
         // Validate
         UserBoundKeyAuthContextProperty propCacheConfig;
@@ -65,23 +59,26 @@ namespace veil::vtl1::userboundkey
 
         // SEAL
         auto sealedKeyMaterial = veil::vtl1::crypto::seal_data(boundKeyBytes, sealingPolicy, ENCLAVE_RUNTIME_POLICY_ALLOW_FULL_DEBUG);
-        return { sealedKeyMaterial, ephemeralPublicKeyBytes };
+        return sealedKeyMaterial;
     }
 
-    wil::secure_vector<uint8_t> enclave_load_user_bound_key(
+    std::vector<uint8_t> enclave_load_user_bound_key(
         const std::wstring& keyName,
-        const std::wstring& message,
         CACHE_CONFIG cacheConfig,
+        const std::wstring& message,
         HWND windowId,
-        std::vector<uint8_t> sealedBoundKeyBytes,
-        std::vector<uint8_t> ephemeralPublicKeyBytes)
+        std::vector<uint8_t> sealedBoundKeyBytes)
     {
         // UNSEAL
         auto boundKeyBytesMaterial = veil::vtl1::crypto::unseal_data(sealedBoundKeyBytes);
         auto& boundKeyBytes = boundKeyBytesMaterial.first;
+        std::vector<uint8_t> ephemeralPublicKeyBytes = GetEphemeralPublicKeyBytesFromBoundKeyBytes(boundKeyBytes);
 
         // SESSION
-        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_load_callback(keyName, message, ephemeralPublicKeyBytes, (uintptr_t)windowId);
+        auto secretAndAuthContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_load_callback(keyName, ephemeralPublicKeyBytes, message, (uintptr_t)windowId);
+
+        auto& secret = secretAndAuthContextBlob.secret;
+        auto& authContextBlob = secretAndAuthContextBlob.authorizationContext;
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
@@ -96,8 +93,8 @@ namespace veil::vtl1::userboundkey
 
         // DECRYPT USERKEY
         size_t cbUserkeyBytes;
-        wil::secure_vector<uint8_t> userkeyBytes(256);
-        THROW_IF_FAILED(RevealUserBoundKey(authContext, boundKeyBytes.data(), boundKeyBytes.size(), (void**)userkeyBytes.data(), &cbUserkeyBytes)); // OS CALL
+        std::vector<uint8_t> userkeyBytes(256);
+        THROW_IF_FAILED(RevealUserBoundKey(authContext, secret.data(), secret.size(), boundKeyBytes.data(), boundKeyBytes.size(), (void**)userkeyBytes.data(), &cbUserkeyBytes)); // OS CALL
 
         CloseUserBoundKeyAuthContextHandle(authContext); // OS CALL
 

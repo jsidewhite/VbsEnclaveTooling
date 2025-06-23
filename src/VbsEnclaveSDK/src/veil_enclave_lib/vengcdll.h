@@ -79,6 +79,8 @@ HRESULT ConcealUserBoundKey(
 // Decrypt the user key from material from disk
 HRESULT RevealUserBoundKey(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
+    _In_ uint8_t* secret,
+    _In_ size_t cbSecret,
     _In_ uint8_t* boundKey,
     _In_ size_t cbBoundKey,
     _Out_ void** userKey,
