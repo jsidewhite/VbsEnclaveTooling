@@ -18,7 +18,9 @@ HRESULT InitializeUserBoundKeySessionInfo(
     _In_reads_bytes_(challengeSize) void* challenge,
     _In_ UINT32 challengeSize,
     _Outptr_result_buffer_(*reportSize) void** report,
-    _Out_ UINT32* reportSize
+    _Out_ UINT32* reportSize,
+    _Outptr_result_buffer_(*sessionKeySize) void** sessionKey,
+    _Out_ UINT32* sessionKeySize
 );
 
 // Auth Context APIs
@@ -72,7 +74,7 @@ HRESULT ValidateUserBoundKeyAuthContext(
 );
 
 // Encrypt the user key and produce material to save to disk
-HRESULT ConcealUserBoundKey(
+HRESULT ProtectUserBoundKey(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
     _In_reads_bytes_(cbUserKey) void* userKey,
     _In_ UINT32 cbUserKey,
@@ -81,7 +83,7 @@ HRESULT ConcealUserBoundKey(
 );
 
 // Decrypt the user key from material from disk
-HRESULT RevealUserBoundKey(
+HRESULT UnprotectUserBoundKey(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
     _In_reads_bytes_(cbSecret) void* secret,
     _In_ UINT32 cbSecret,

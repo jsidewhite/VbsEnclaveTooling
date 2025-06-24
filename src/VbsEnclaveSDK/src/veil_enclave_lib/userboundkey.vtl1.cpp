@@ -12,15 +12,26 @@ namespace veil_abi::VTL1_Declarations
         void* tempReportPtr = nullptr; // Temporary variable of type void*
         size_t reportSize = 0;
 
+        uint8_t* sessionKeyPtr = nullptr;
+        void* tempSessionKeyPtr = nullptr; // Temporary variable of type void*
+        size_t sessionKeySize = 0;
+
         THROW_IF_FAILED(InitializeUserBoundKeySessionInfo(
             const_cast<uint8_t*>(challenge.data()),
             static_cast<UINT32>(challenge.size()),
             &tempReportPtr,
-            reinterpret_cast<UINT32*>(&reportSize))); // OS CALL
+            reinterpret_cast<UINT32*>(&reportSize),
+            &tempSessionKeyPtr,
+            reinterpret_cast<UINT32*>(&sessionKeySize))); // OS CALL
 
         reportPtr = static_cast<uint8_t*>(tempReportPtr); // Cast back to uint8_t*
         std::vector<uint8_t> report(reportPtr, reportPtr + reportSize);
         CoTaskMemFree(reportPtr);
+
+        sessionKeyPtr = static_cast<uint8_t*>(tempSessionKeyPtr); // Cast back to uint8_t*
+        std::vector<uint8_t> sessionKey(sessionKeyPtr, sessionKeyPtr + sessionKeySize);
+        CoTaskMemFree(sessionKeyPtr);
+
         return report;
     }
 }
@@ -28,7 +39,7 @@ namespace veil_abi::VTL1_Declarations
 namespace veil::vtl1::userboundkey
 {
 
-    std::vector<uint8_t> GetEphemeralPublicKeyBytesFromBoundKeyBytes(wil::secure_vector<uint8_t> boundKeyBytes)
+    std::vector<uint8_t> GetEphemeralPublicKeyBytesFromBoundKeyBytes(wil::secure_vector<uint8_t> /*boundKeyBytes*/)
     {
         // TODO: implemententation
         return {};
@@ -68,7 +79,7 @@ namespace veil::vtl1::userboundkey
         // ENCRYPT USERKEY
         std::vector<uint8_t> boundKeyBytes(256);
         UINT32 cbBoundKeyBytes = static_cast<UINT32>(boundKeyBytes.size()); // Ensure the type matches
-        THROW_IF_FAILED(ConcealUserBoundKey(authContext, userkeyBytes.data(), static_cast<UINT32>(userkeyBytes.size()), (void**)boundKeyBytes.data(), &cbBoundKeyBytes)); // OS CALL
+        THROW_IF_FAILED(ProtectUserBoundKey(authContext, userkeyBytes.data(), static_cast<UINT32>(userkeyBytes.size()), (void**)boundKeyBytes.data(), &cbBoundKeyBytes)); // OS CALL
         CloseUserBoundKeyAuthContextHandle(authContext); // OS CALL
 
         // SEAL
@@ -112,7 +123,7 @@ namespace veil::vtl1::userboundkey
         // DECRYPT USERKEY
         UINT32 cbUserkeyBytes = 0; // Declare cbUserkeyBytes as UINT32
         std::vector<uint8_t> userkeyBytes(256);
-        THROW_IF_FAILED(RevealUserBoundKey(
+        THROW_IF_FAILED(UnprotectUserBoundKey(
             authContext,
             secret.data(),
             static_cast<UINT32>(secret.size()), // Explicit cast to UINT32
