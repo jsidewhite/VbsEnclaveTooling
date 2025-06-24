@@ -9,8 +9,16 @@ namespace veil_abi::VTL1_Declarations
     std::vector<std::uint8_t> userboundkey_get_attestation_report(_In_ const std::vector<std::uint8_t>& challenge)
     {
         uint8_t* reportPtr = nullptr;
+        void* tempReportPtr = nullptr; // Temporary variable of type void*
         size_t reportSize = 0;
-        THROW_IF_FAILED(InitializeUserBoundKeySessionInfo(const_cast<uint8_t*>(challenge.data()), challenge.size(), &reportPtr, &reportSize)); // OS CALL
+
+        THROW_IF_FAILED(InitializeUserBoundKeySessionInfo(
+            const_cast<uint8_t*>(challenge.data()),
+            static_cast<UINT32>(challenge.size()),
+            &tempReportPtr,
+            reinterpret_cast<UINT32*>(&reportSize))); // OS CALL
+
+        reportPtr = static_cast<uint8_t*>(tempReportPtr); // Cast back to uint8_t*
         std::vector<uint8_t> report(reportPtr, reportPtr + reportSize);
         CoTaskMemFree(reportPtr);
         return report;
@@ -39,22 +47,28 @@ namespace veil::vtl1::userboundkey
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
-        THROW_IF_FAILED(GetUserBoundKeyCreationAuthContext(keyName.c_str(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
+        THROW_IF_FAILED(GetUserBoundKeyCreationAuthContext(
+            keyName.c_str(), // Pass the keyName as a wide string
+            authContextBlob.data(), // Pass the pointer to the authContextBlob
+            static_cast<UINT32>(authContextBlob.size()), // Pass the size of the authContextBlob
+            &authContext // Pass the output handle
+        )); // OS CALL
 
         // Validate
-        UserBoundKeyAuthContextProperty propCacheConfig;
-        propCacheConfig.name = CacheConfig;
+        USER_BOUND_KEY_AUTH_CONTEXT_PROPERTY propCacheConfig;
+        propCacheConfig.name = UserBoundKeyAuthContextPropertyCacheConfig; // Correct enum value
         propCacheConfig.size = sizeof(cacheConfig);
-        propCacheConfig.value = (uint8_t*)&cacheConfig;
+        propCacheConfig.value = reinterpret_cast<void*>(&cacheConfig);
+
         THROW_IF_FAILED(ValidateUserBoundKeyAuthContext(authContext, 1, &propCacheConfig)); // OS CALL
 
         // USERKEY
         auto userkeyBytes = veil::vtl1::crypto::generate_symmetric_key_bytes();
 
         // ENCRYPT USERKEY
-        size_t cbBoundKeyBytes;
         std::vector<uint8_t> boundKeyBytes(256);
-        THROW_IF_FAILED(ConcealUserBoundKey(authContext, userkeyBytes.data(), userkeyBytes.size(), (void**)boundKeyBytes.data(), &cbBoundKeyBytes)); // OS CALL
+        UINT32 cbBoundKeyBytes = static_cast<UINT32>(boundKeyBytes.size()); // Ensure the type matches
+        THROW_IF_FAILED(ConcealUserBoundKey(authContext, userkeyBytes.data(), static_cast<UINT32>(userkeyBytes.size()), (void**)boundKeyBytes.data(), &cbBoundKeyBytes)); // OS CALL
         CloseUserBoundKeyAuthContextHandle(authContext); // OS CALL
 
         // SEAL
@@ -82,19 +96,30 @@ namespace veil::vtl1::userboundkey
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
-        THROW_IF_FAILED(GetUserBoundKeyLoadingAuthContext(keyName.c_str(), authContextBlob.data(), authContextBlob.size(), &authContext)); // OS CALL
+        THROW_IF_FAILED(GetUserBoundKeyLoadingAuthContext(
+            keyName.c_str(),
+            authContextBlob.data(),
+            static_cast<UINT32>(authContextBlob.size()), // Explicit cast to UINT32 to resolve C4267
+            &authContext)); // OS CALL
 
         // Validate
-        UserBoundKeyAuthContextProperty propCacheConfig;
-        propCacheConfig.name = CacheConfig;
+        USER_BOUND_KEY_AUTH_CONTEXT_PROPERTY propCacheConfig;
+        propCacheConfig.name = UserBoundKeyAuthContextPropertyCacheConfig;
         propCacheConfig.size = sizeof(cacheConfig);
         propCacheConfig.value = (uint8_t*) &cacheConfig;
         THROW_IF_FAILED(ValidateUserBoundKeyAuthContext(authContext, 1, &propCacheConfig)); // OS CALL
 
         // DECRYPT USERKEY
-        size_t cbUserkeyBytes;
+        UINT32 cbUserkeyBytes = 0; // Declare cbUserkeyBytes as UINT32
         std::vector<uint8_t> userkeyBytes(256);
-        THROW_IF_FAILED(RevealUserBoundKey(authContext, secret.data(), secret.size(), boundKeyBytes.data(), boundKeyBytes.size(), (void**)userkeyBytes.data(), &cbUserkeyBytes)); // OS CALL
+        THROW_IF_FAILED(RevealUserBoundKey(
+            authContext,
+            secret.data(),
+            static_cast<UINT32>(secret.size()), // Explicit cast to UINT32
+            boundKeyBytes.data(),
+            static_cast<UINT32>(boundKeyBytes.size()), // Explicit cast to UINT32
+            (void**)userkeyBytes.data(),
+            &cbUserkeyBytes)); // OS CALL
 
         CloseUserBoundKeyAuthContextHandle(authContext); // OS CALL
 
