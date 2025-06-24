@@ -21,12 +21,13 @@ enum class KeyCredentialCacheOption
     TimeAndUsageBased
 };
 
-enum class CallbackType
+namespace winrt::Windows::Security::Credentials
 {
-    VBSEnclave,
-    Other
-};
-
+    enum class CallbackType
+    {
+        VBSEnclave
+    };
+}
 
 struct KeyCredentialCacheConfiguration
 {
@@ -78,7 +79,7 @@ namespace winrt::Windows::Security::Credentials
         KeyCredentialCreationOption creationOption,
         const KeyCredentialCacheConfiguration& cacheConfig,
         winrt::Windows::UI::WindowId windowId,  // Use Windows.UI.WindowId when this is idl'd
-        CallbackType enclaveType,
+        winrt::Windows::Security::Credentials::CallbackType enclaveType,
         AuthenticatedSessionChallengeCallback&& challengeCallback);
 
     // Asynchronous function to open a credential and perform authenticated challenge.
@@ -88,7 +89,7 @@ namespace winrt::Windows::Security::Credentials
         const std::wstring& message,
         const std::vector<uint8_t>& ephemeralPublicKeyBytes,
         winrt::Windows::UI::WindowId windowId,  // Use Windows.UI.WindowId when this is idl'd
-        CallbackType enclaveType,
+        winrt::Windows::Security::Credentials::CallbackType enclaveType,
         AuthenticatedSessionChallengeCallback&& challengeCallback);
 }
 
