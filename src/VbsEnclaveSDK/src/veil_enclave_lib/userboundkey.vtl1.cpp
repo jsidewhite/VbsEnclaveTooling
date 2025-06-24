@@ -6,7 +6,7 @@
 
 namespace veil_abi::VTL1_Declarations
 {
-    std::vector<std::uint8_t> userboundkey_get_attestation_report(_In_ const std::vector<std::uint8_t>& challenge)
+    attestationReportAndSessionKeyPtr userboundkey_get_attestation_report(_In_ const std::vector<std::uint8_t>& challenge)
     {
         uint8_t* reportPtr = nullptr;
         void* tempReportPtr = nullptr; // Temporary variable of type void*
@@ -14,7 +14,7 @@ namespace veil_abi::VTL1_Declarations
 
         uint8_t* sessionKeyPtr = nullptr;
         void* tempSessionKeyPtr = nullptr; // Temporary variable of type void*
-        size_t sessionKeySize = 0;
+        size_t sessionKeyPtrSize = 0;
 
         THROW_IF_FAILED(InitializeUserBoundKeySessionInfo(
             const_cast<uint8_t*>(challenge.data()),
@@ -22,17 +22,17 @@ namespace veil_abi::VTL1_Declarations
             &tempReportPtr,
             reinterpret_cast<UINT32*>(&reportSize),
             &tempSessionKeyPtr,
-            reinterpret_cast<UINT32*>(&sessionKeySize))); // OS CALL
+            reinterpret_cast<UINT32*>(&sessionKeyPtrSize))); // OS CALL
 
         reportPtr = static_cast<uint8_t*>(tempReportPtr); // Cast back to uint8_t*
         std::vector<uint8_t> report(reportPtr, reportPtr + reportSize);
         CoTaskMemFree(reportPtr);
 
         sessionKeyPtr = static_cast<uint8_t*>(tempSessionKeyPtr); // Cast back to uint8_t*
-        std::vector<uint8_t> sessionKey(sessionKeyPtr, sessionKeyPtr + sessionKeySize);
+        std::vector<uint8_t> sessionKey(sessionKeyPtr, sessionKeyPtr + sessionKeyPtrSize);
         CoTaskMemFree(sessionKeyPtr);
 
-        return report;
+        return attestationReportAndSessionKeyPtr{std::move(report), reinterpret_cast<std::uintptr_t>(sessionKey.data())};
     }
 }
 
@@ -54,12 +54,14 @@ namespace veil::vtl1::userboundkey
         ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
     {
         // SESSION
-        auto authContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_create_callback(keyName, reinterpret_cast<uintptr_t>(BCRYPT_ECDH_P384_ALG_HANDLE), message, (uintptr_t)windowId);
+        auto authContextBlobAndSessionKeyPtr = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_create_callback(keyName, reinterpret_cast<uintptr_t>(BCRYPT_ECDH_P384_ALG_HANDLE), message, (uintptr_t)windowId);
+        auto& authContextBlob = authContextBlobAndSessionKeyPtr.authContextBlob;
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
         THROW_IF_FAILED(GetUserBoundKeyCreationAuthContext(
             keyName.c_str(), // Pass the keyName as a wide string
+            authContextBlobAndSessionKeyPtr.sessionKeyPtr,
             authContextBlob.data(), // Pass the pointer to the authContextBlob
             static_cast<UINT32>(authContextBlob.size()), // Pass the size of the authContextBlob
             &authContext // Pass the output handle
@@ -100,15 +102,17 @@ namespace veil::vtl1::userboundkey
         std::vector<uint8_t> ephemeralPublicKeyBytes = GetEphemeralPublicKeyBytesFromBoundKeyBytes(boundKeyBytes);
 
         // SESSION
-        auto secretAndAuthContextBlob = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_load_callback(keyName, ephemeralPublicKeyBytes, message, (uintptr_t)windowId);
+        auto secretAndAuthorizationContextAndSessionKeyPtr = veil_abi::VTL0_Callbacks::userboundkey_establish_session_for_load_callback(keyName, ephemeralPublicKeyBytes, message, (uintptr_t)windowId);
 
-        auto& secret = secretAndAuthContextBlob.secret;
-        auto& authContextBlob = secretAndAuthContextBlob.authorizationContext;
+        auto& secret = secretAndAuthorizationContextAndSessionKeyPtr.secret;
+        auto& authContextBlob = secretAndAuthorizationContextAndSessionKeyPtr.authorizationContext;
+        auto sessionKeyPtr = secretAndAuthorizationContextAndSessionKeyPtr.sessionKeyPtr;
 
         // AUTH CONTEXT
         USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext;
         THROW_IF_FAILED(GetUserBoundKeyLoadingAuthContext(
             keyName.c_str(),
+            sessionKeyPtr,
             authContextBlob.data(),
             static_cast<UINT32>(authContextBlob.size()), // Explicit cast to UINT32 to resolve C4267
             &authContext)); // OS CALL
