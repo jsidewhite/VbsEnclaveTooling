@@ -59,8 +59,7 @@ class CreatedCredential
 {  
 public:  
     blob RetrieveAuthorizationContext() const;  
-    std::vector<uint8_t> RequestDeriveSharedSecretAsync(const std::wstring& message) const;  
-    void RequestSecretAgreementAsync(const std::wstring& message, const std::vector<uint8_t>& ephemeralPublicKeyBytes, HWND windowId) const;  
+    std::vector<uint8_t> RequestDeriveSharedSecretAsync(const std::wstring& message, const std::vector<uint8_t>& ephemeralPublicKeyBytes, HWND windowId) const;
 };  
 
 namespace winrt::Windows::UI  
