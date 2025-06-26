@@ -66,9 +66,6 @@ secretAndAuthorizationContextAndSessionKeyPtr veil_abi::VTL0_Stubs::export_inter
     uintptr_t sessionKeyPtr;
     auto credential = winrt::Windows::Security::Credentials::OpenAsync(
         key_name.c_str(),
-        message.c_str(),
-        ephemeralPublicKeyBytes,
-        (winrt::Windows::UI::WindowId)windowId,
         winrt::Windows::Security::Credentials::CallbackType::VBSEnclave,
         [&sessionKeyPtr] (const auto& challenge) mutable
         {
@@ -78,6 +75,8 @@ secretAndAuthorizationContextAndSessionKeyPtr veil_abi::VTL0_Stubs::export_inter
             return attestationReportAndSessionKeyPtr.attestationReport;
         }
     ).get();
+
+    credential.RequestSecretAgreementAsync(message, ephemeralPublicKeyBytes, (winrt::Windows::UI::WindowId)windowId);
 
     return secretAndAuthorizationContextAndSessionKeyPtr(credential.RequestDeriveSharedSecretAsync(message), credential.RetrieveAuthorizationContext(), sessionKeyPtr);
 }
