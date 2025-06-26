@@ -60,7 +60,7 @@ class CreatedCredential
 {
 public:
     blob RetrieveAuthorizationContext() const;
-    std::vector<uint8_t> RequestDeriveSharedSecret() const;
+    std::vector<uint8_t> RequestDeriveSharedSecretAsync(const std::wstring& message) const;
 };
 
 namespace winrt::Windows::UI
@@ -84,7 +84,7 @@ namespace winrt::Windows::Security::Credentials
 
     // Asynchronous function to open a credential and perform authenticated challenge.
     template <typename AuthenticatedSessionChallengeCallback>
-    std::future<CreatedCredential> RequestOpenAsync(
+    std::future<CreatedCredential> OpenAsync(
         const std::wstring& credentialName,
         const std::wstring& message,
         const std::vector<uint8_t>& ephemeralPublicKeyBytes,

@@ -46,7 +46,7 @@ typedef enum _USER_BOUND_KEY_AUTH_CONTEXT_PROPERTIES {
 // Computes the key encryption key (KEK) for the user bound key.
 HRESULT GetUserBoundKeyCreationAuthContext(
     _In_ PCWSTR keyName,
-    _In_ uintptr_t sessionKeyPtr,
+    _In_ UINT_PTR sessionKeyPtr,
     _In_reads_bytes_(authContextBlobSize) void* authContextBlob, // auth context generated as part of RequestCreateAsync
     _In_ UINT32 authContextBlobSize,
     _Out_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE* authContextHandle
@@ -56,7 +56,7 @@ HRESULT GetUserBoundKeyCreationAuthContext(
 // Decrypts the auth context blob provided by NGC, verifies that the keyname matches the one in the auth context blob.
 HRESULT GetUserBoundKeyLoadingAuthContext(
     _In_ PCWSTR keyName,
-    _In_ uintptr_t sessionKeyPtr,
+    _In_ UINT_PTR sessionKeyPtr,
     _In_reads_bytes_(authContextBlobSize) void* authContextBlob, // auth context generated as part of RequestCreateAsync 
     _In_ UINT32 authContextBlobSize,
     _Out_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE* authContextHandle
