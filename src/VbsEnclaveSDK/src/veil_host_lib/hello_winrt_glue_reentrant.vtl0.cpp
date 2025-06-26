@@ -77,7 +77,7 @@ secretAndAuthorizationContextAndSessionKeyPtr veil_abi::VTL0_Stubs::export_inter
     ).get();
 
     auto authorizationContext = credential.RetrieveAuthorizationContext();
-    auto secret = credential.RequestDeriveSharedSecretAsync(message, ephemeralPublicKeyBytes, (winrt::Windows::UI::WindowId)windowId);
+    auto secret = credential.RequestDeriveSharedSecretAsync(message, ephemeralPublicKeyBytes, (winrt::Windows::UI::WindowId)windowId).get();
 
     return secretAndAuthorizationContextAndSessionKeyPtr(secret, authorizationContext, sessionKeyPtr);
 }
