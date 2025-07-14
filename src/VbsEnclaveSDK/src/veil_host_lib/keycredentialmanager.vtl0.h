@@ -25,7 +25,7 @@ namespace winrt::Windows::Security::Credentials
 {  
     enum class ChallengeResponseKind  
     {  
-        VBSEnclave  
+        VirtualizationBasedSecurityEnclave  
     };  
 }  
 

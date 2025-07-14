@@ -15,12 +15,12 @@
 // Generates a session key, passes session key and provided challenge to EnclaveGetAttestationReport,
 // encrypts the attestation report with EnclaveEncryptDataForTrustlet, returns the encrypted report. 
 HRESULT InitializeUserBoundKeySessionInfo(
-    _In_reads_bytes_(challengeSize) void* challenge,
+    _In_reads_bytes_(challengeSize) const void* challenge,
     _In_ UINT32 challengeSize,
     _Outptr_result_buffer_(*reportSize) void** report,
     _Out_ UINT32* reportSize,
-    _Outptr_result_buffer_(*sessionKeyPtrSize) void** sessionKeyPtr,
-    _Out_ UINT32* sessionKeyPtrSize
+    _Out_ UINT_PTR* sessionKeyPtr,
+    _Out_ UINT32* sessionKeySize
 );
 
 // Auth Context APIs
@@ -47,7 +47,7 @@ typedef enum _USER_BOUND_KEY_AUTH_CONTEXT_PROPERTIES {
 HRESULT GetUserBoundKeyCreationAuthContext(
     _In_ PCWSTR keyName,
     _In_ UINT_PTR sessionKeyPtr,
-    _In_reads_bytes_(authContextBlobSize) void* authContextBlob, // auth context generated as part of RequestCreateAsync
+    _In_reads_bytes_(authContextBlobSize) const void* authContextBlob, // auth context generated as part of RequestCreateAsync
     _In_ UINT32 authContextBlobSize,
     _Out_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE* authContextHandle
 );
@@ -57,7 +57,7 @@ HRESULT GetUserBoundKeyCreationAuthContext(
 HRESULT GetUserBoundKeyLoadingAuthContext(
     _In_ PCWSTR keyName,
     _In_ UINT_PTR sessionKeyPtr,
-    _In_reads_bytes_(authContextBlobSize) void* authContextBlob, // auth context generated as part of RequestCreateAsync 
+    _In_reads_bytes_(authContextBlobSize) const void* authContextBlob, // auth context generated as part of RequestCreateAsync 
     _In_ UINT32 authContextBlobSize,
     _Out_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE* authContextHandle
 );
@@ -72,13 +72,13 @@ typedef struct _USER_BOUND_KEY_AUTH_CONTEXT_PROPERTY
 HRESULT ValidateUserBoundKeyAuthContext(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContextHandle,
     _In_ UINT32 count,
-    _In_reads_(count) USER_BOUND_KEY_AUTH_CONTEXT_PROPERTY* values
+    _In_reads_(count) const USER_BOUND_KEY_AUTH_CONTEXT_PROPERTY* values
 );
 
 // Encrypt the user key and produce material to save to disk
 HRESULT ProtectUserBoundKey(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
-    _In_reads_bytes_(userKeySize) void* userKey,
+    _In_reads_bytes_(userKeySize) const void* userKey,
     _In_ UINT32 userKeySize,
     _Outptr_result_buffer_(*boundKeySize) void** boundKey,
     _Inout_ UINT32* boundKeySize
@@ -87,9 +87,9 @@ HRESULT ProtectUserBoundKey(
 // Decrypt the user key from material from disk
 HRESULT UnprotectUserBoundKey(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
-    _In_reads_bytes_(secretSize) void* secret,
+    _In_reads_bytes_(secretSize) const void* secret,
     _In_ UINT32 secretSize,
-    _In_reads_bytes_(boundKeySize) void* boundKey,
+    _In_reads_bytes_(boundKeySize) const void* boundKey,
     _In_ UINT32 boundKeySize,
     _Outptr_result_buffer_(*userKeySize) void** userKey,
     _Inout_ UINT32* userKeySize

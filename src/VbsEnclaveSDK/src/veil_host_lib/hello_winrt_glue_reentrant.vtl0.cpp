@@ -5,6 +5,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <memory>
 #include <winrt/base.h>
 
 #include <VbsEnclave\HostApp\Stubs.h>
@@ -37,7 +38,7 @@ authContextBlobAndSessionKeyPtr veil_abi::VTL0_Stubs::export_interface::userboun
         300, // KeyCredentialCacheTimeout
         5); // KeyCredentialCacheUsageCount
 
-    uintptr_t sessionKeyPtr;
+    auto sessionKeyPtr = std::make_shared<uintptr_t>(0);
     auto credential = winrt::Windows::Security::Credentials::KeyCredentialManager::RequestCreateAsync(
         key_name,
         KeyCredentialCreationOption::FailIfExists,
@@ -45,17 +46,20 @@ authContextBlobAndSessionKeyPtr veil_abi::VTL0_Stubs::export_interface::userboun
         message,
         cacheConfiguration,
         (winrt::Windows::UI::WindowId)windowId,
-        winrt::Windows::Security::Credentials::ChallengeResponseKind::VBSEnclave,
-        [&sessionKeyPtr](const auto& challenge) mutable
+        winrt::Windows::Security::Credentials::ChallengeResponseKind::VirtualizationBasedSecurityEnclave,
+        [sessionKeyPtr](const auto& challenge) mutable
         {
             auto enclaveInterface = veil_abi::VTL0_Stubs::export_interface(nullptr);
             auto attestationReportAndSessionKeyPtr = enclaveInterface.userboundkey_get_attestation_report(challenge);  // !!! call into enclave !!!
-            sessionKeyPtr = attestationReportAndSessionKeyPtr.sessionKey;
+            *sessionKeyPtr = attestationReportAndSessionKeyPtr.sessionKey;
             return attestationReportAndSessionKeyPtr.attestationReport;
         }
     ).get();
 
-    return authContextBlobAndSessionKeyPtr(credential.RetrieveAuthorizationContext(), sessionKeyPtr);
+    authContextBlobAndSessionKeyPtr result;
+    result.authContextBlob = credential.RetrieveAuthorizationContext();
+    result.sessionKeyPtr = *sessionKeyPtr;
+    return result;
 }
 
 secretAndAuthorizationContextAndSessionKeyPtr veil_abi::VTL0_Stubs::export_interface::userboundkey_establish_session_for_load_callback(
@@ -64,15 +68,15 @@ secretAndAuthorizationContextAndSessionKeyPtr veil_abi::VTL0_Stubs::export_inter
     const std::wstring& message,
     uintptr_t windowId)
 {
-    uintptr_t sessionKeyPtr;
+    auto sessionKeyPtr = std::make_shared<uintptr_t>(0);
     auto credential = winrt::Windows::Security::Credentials::KeyCredentialManager::OpenAsync(
         key_name.c_str(),
-        winrt::Windows::Security::Credentials::ChallengeResponseKind::VBSEnclave,
-        [&sessionKeyPtr] (const auto& challenge) mutable
+        winrt::Windows::Security::Credentials::ChallengeResponseKind::VirtualizationBasedSecurityEnclave,
+        [sessionKeyPtr] (const auto& challenge) mutable
         {
             auto enclaveInterface = veil_abi::VTL0_Stubs::export_interface(nullptr);
             auto attestationReportAndSessionKeyPtr = enclaveInterface.userboundkey_get_attestation_report(challenge);  // !!! call into enclave !!!
-            sessionKeyPtr = attestationReportAndSessionKeyPtr.sessionKey;
+            *sessionKeyPtr = attestationReportAndSessionKeyPtr.sessionKey;
             return attestationReportAndSessionKeyPtr.attestationReport;
         }
     ).get();
@@ -80,5 +84,9 @@ secretAndAuthorizationContextAndSessionKeyPtr veil_abi::VTL0_Stubs::export_inter
     auto authorizationContext = credential.RetrieveAuthorizationContext();
     auto secret = credential.RequestDeriveSharedSecretAsync(message, ephemeralPublicKeyBytes, (winrt::Windows::UI::WindowId)windowId).get();
 
-    return secretAndAuthorizationContextAndSessionKeyPtr(secret, authorizationContext, sessionKeyPtr);
+    secretAndAuthorizationContextAndSessionKeyPtr result;
+    result.secret = secret;
+    result.authorizationContext = authorizationContext;
+    result.sessionKeyPtr = *sessionKeyPtr;
+    return result;
 }
