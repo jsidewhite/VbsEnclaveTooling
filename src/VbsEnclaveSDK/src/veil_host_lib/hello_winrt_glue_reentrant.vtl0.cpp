@@ -5,12 +5,13 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <winrt/base.h>
 
 #include <VbsEnclave\HostApp\Stubs.h>
 
 #include "keycredentialmanager.vtl0.h"
 
-std::wstring GetAlgorithm(uintptr_t ecdhAlgorithm)
+winrt::hstring GetAlgorithm(uintptr_t ecdhAlgorithm)
 {
     if (reinterpret_cast<BCRYPT_ALG_HANDLE>(ecdhAlgorithm) == BCRYPT_ECDH_P384_ALG_HANDLE)
     {
@@ -37,11 +38,11 @@ authContextBlobAndSessionKeyPtr veil_abi::VTL0_Stubs::export_interface::userboun
         5); // KeyCredentialCacheUsageCount
 
     uintptr_t sessionKeyPtr;
-    auto credential = winrt::Windows::Security::Credentials::RequestCreateAsync(
-        key_name.c_str(),
+    auto credential = winrt::Windows::Security::Credentials::KeyCredentialManager::RequestCreateAsync(
+        key_name,
+        KeyCredentialCreationOption::FailIfExists,
         algorithm,
         message,
-        KeyCredentialCreationOption::FailIfExists,
         cacheConfiguration,
         (winrt::Windows::UI::WindowId)windowId,
         winrt::Windows::Security::Credentials::CallbackType::VBSEnclave,
@@ -64,7 +65,7 @@ secretAndAuthorizationContextAndSessionKeyPtr veil_abi::VTL0_Stubs::export_inter
     uintptr_t windowId)
 {
     uintptr_t sessionKeyPtr;
-    auto credential = winrt::Windows::Security::Credentials::OpenAsync(
+    auto credential = winrt::Windows::Security::Credentials::KeyCredentialManager::OpenAsync(
         key_name.c_str(),
         winrt::Windows::Security::Credentials::CallbackType::VBSEnclave,
         [&sessionKeyPtr] (const auto& challenge) mutable

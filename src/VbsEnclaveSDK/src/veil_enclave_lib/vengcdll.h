@@ -78,21 +78,21 @@ HRESULT ValidateUserBoundKeyAuthContext(
 // Encrypt the user key and produce material to save to disk
 HRESULT ProtectUserBoundKey(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
-    _In_reads_bytes_(cbUserKey) void* userKey,
-    _In_ UINT32 cbUserKey,
-    _Outptr_result_buffer_(*cbBoundKey) void** boundKey,
-    _Inout_ UINT32* cbBoundKey
+    _In_reads_bytes_(userKeySize) void* userKey,
+    _In_ UINT32 userKeySize,
+    _Outptr_result_buffer_(*boundKeySize) void** boundKey,
+    _Inout_ UINT32* boundKeySize
 );
 
 // Decrypt the user key from material from disk
 HRESULT UnprotectUserBoundKey(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
-    _In_reads_bytes_(cbSecret) void* secret,
-    _In_ UINT32 cbSecret,
-    _In_reads_bytes_(cbBoundKey) void* boundKey,
-    _In_ UINT32 cbBoundKey,
-    _Outptr_result_buffer_(*cbUserKey) void** userKey,
-    _Inout_ UINT32* cbUserKey
+    _In_reads_bytes_(secretSize) void* secret,
+    _In_ UINT32 secretSize,
+    _In_reads_bytes_(boundKeySize) void* boundKey,
+    _In_ UINT32 boundKeySize,
+    _Outptr_result_buffer_(*userKeySize) void** userKey,
+    _Inout_ UINT32* userKeySize
 );
 
 #endif // VENGCDLL_H

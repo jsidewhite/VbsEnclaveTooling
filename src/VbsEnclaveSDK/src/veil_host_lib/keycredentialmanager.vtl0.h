@@ -1,6 +1,7 @@
 #pragma once  
 
 #include <windows.h>  
+#include <winrt/base.h>
 
 #include <string>  
 #include <functional>  
@@ -44,8 +45,8 @@ struct KeyCredentialCacheConfiguration
 
 // Placeholder types to match usage.  
 namespace KeyAlgorithmNames {  
-    inline const std::wstring Ecdh384 = L"ECDH384";  
-    inline const std::wstring Ecdh256 = L"ECDH256";  
+    inline const winrt::hstring Ecdh384 = L"ECDSA_P384";  
+    inline const winrt::hstring Ecdh256 = L"ECDSA_P256";  
 }  
 
 enum class KeyCredentialCreationOption {  
@@ -67,24 +68,29 @@ namespace winrt::Windows::UI
     using WindowId = HWND;  
 }  
 
-namespace winrt::Windows::Security::Credentials  
-{  
-    // Asynchronous function to create a credential and perform authenticated challenge.  
-    template <typename AuthenticatedSessionChallengeCallback>  
-    std::future<CreatedCredential> RequestCreateAsync(  
-        const std::wstring& credentialName,  
-        const std::wstring& algorithm,  
-        const std::wstring& message,  
-        KeyCredentialCreationOption creationOption,  
-        const KeyCredentialCacheConfiguration& cacheConfig,  
+namespace winrt::Windows::Security::Credentials
+{
+// Key Credential Manager class with static methods
+class KeyCredentialManager
+{
+    public:
+        // Asynchronous function to create a credential and perform authenticated challenge.  
+    template <typename AuthenticatedSessionChallengeCallback>
+    static std::future<CreatedCredential> RequestCreateAsync(
+        const std::wstring& credentialName,
+        KeyCredentialCreationOption creationOption,
+        const winrt::hstring& algorithm,
+        const std::wstring& message,
+        const KeyCredentialCacheConfiguration& cacheConfig,
         HWND windowId,  // Use HWND directly for compatibility  
-        winrt::Windows::Security::Credentials::CallbackType enclaveType,  
-        AuthenticatedSessionChallengeCallback&& challengeCallback);  
+        winrt::Windows::Security::Credentials::CallbackType enclaveType,
+        AuthenticatedSessionChallengeCallback&& challengeCallback);
 
     // Asynchronous function to open a credential and perform authenticated challenge.  
-    template <typename AuthenticatedSessionChallengeCallback>  
-    std::future<CreatedCredential> OpenAsync(  
-        const std::wstring& credentialName,  
-        winrt::Windows::Security::Credentials::CallbackType enclaveType,  
-        AuthenticatedSessionChallengeCallback&& challengeCallback);  
+    template <typename AuthenticatedSessionChallengeCallback>
+    static std::future<CreatedCredential> OpenAsync(
+        const std::wstring& credentialName,
+        winrt::Windows::Security::Credentials::CallbackType enclaveType,
+        AuthenticatedSessionChallengeCallback&& challengeCallback);
+};
 }
