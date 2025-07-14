@@ -45,7 +45,7 @@ authContextBlobAndSessionKeyPtr veil_abi::VTL0_Stubs::export_interface::userboun
         message,
         cacheConfiguration,
         (winrt::Windows::UI::WindowId)windowId,
-        winrt::Windows::Security::Credentials::CallbackType::VBSEnclave,
+        winrt::Windows::Security::Credentials::ChallengeResponseKind::VBSEnclave,
         [&sessionKeyPtr](const auto& challenge) mutable
         {
             auto enclaveInterface = veil_abi::VTL0_Stubs::export_interface(nullptr);
@@ -67,7 +67,7 @@ secretAndAuthorizationContextAndSessionKeyPtr veil_abi::VTL0_Stubs::export_inter
     uintptr_t sessionKeyPtr;
     auto credential = winrt::Windows::Security::Credentials::KeyCredentialManager::OpenAsync(
         key_name.c_str(),
-        winrt::Windows::Security::Credentials::CallbackType::VBSEnclave,
+        winrt::Windows::Security::Credentials::ChallengeResponseKind::VBSEnclave,
         [&sessionKeyPtr] (const auto& challenge) mutable
         {
             auto enclaveInterface = veil_abi::VTL0_Stubs::export_interface(nullptr);

@@ -23,7 +23,7 @@ enum class KeyCredentialCacheOption
 
 namespace winrt::Windows::Security::Credentials  
 {  
-    enum class CallbackType  
+    enum class ChallengeResponseKind  
     {  
         VBSEnclave  
     };  
@@ -83,14 +83,14 @@ class KeyCredentialManager
         const std::wstring& message,
         const KeyCredentialCacheConfiguration& cacheConfig,
         HWND windowId,  // Use HWND directly for compatibility  
-        winrt::Windows::Security::Credentials::CallbackType enclaveType,
+        winrt::Windows::Security::Credentials::ChallengeResponseKind challengeResponseKind,
         AuthenticatedSessionChallengeCallback&& challengeCallback);
 
     // Asynchronous function to open a credential and perform authenticated challenge.  
     template <typename AuthenticatedSessionChallengeCallback>
     static std::future<CreatedCredential> OpenAsync(
         const std::wstring& credentialName,
-        winrt::Windows::Security::Credentials::CallbackType enclaveType,
+        winrt::Windows::Security::Credentials::ChallengeResponseKind challengeResponseKind,
         AuthenticatedSessionChallengeCallback&& challengeCallback);
 };
 }
