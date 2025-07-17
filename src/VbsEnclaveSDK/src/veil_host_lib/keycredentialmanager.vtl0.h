@@ -55,13 +55,33 @@ enum class KeyCredentialCreationOption {
     // Add more as needed  
 };  
 
-// Represents the result of RequestCreateAsync.  
-class CreatedCredential  
+// Represents a key credential (renamed from CreatedCredential).  
+class KeyCredential  
 {  
 public:  
     blob RetrieveAuthorizationContext() const;  
     std::future<std::vector<uint8_t>> RequestDeriveSharedSecretAsync(const std::wstring& message, const std::vector<uint8_t>& ephemeralPublicKeyBytes, HWND windowId) const;
 };  
+
+// Result of key credential operations containing both the credential and status.
+class KeyCredentialRetrievalResult
+{
+public:
+    KeyCredential credential;
+    HRESULT status;
+
+    // Get the credential (only valid if IsSuccess() returns true)
+    const KeyCredential& GetCredential() const
+    {
+        return credential;
+    }
+
+    // Get the status code
+    HRESULT GetStatus() const noexcept
+    {
+        return status;
+    }
+};
 
 namespace winrt::Windows::UI  
 {  
@@ -76,7 +96,7 @@ class KeyCredentialManager
     public:
         // Asynchronous function to create a credential and perform authenticated challenge.  
     template <typename AuthenticatedSessionChallengeCallback>
-    static std::future<CreatedCredential> RequestCreateAsync(
+    static std::future<KeyCredentialRetrievalResult> RequestCreateAsync(
         const std::wstring& credentialName,
         KeyCredentialCreationOption creationOption,
         const winrt::hstring& algorithm,
@@ -88,7 +108,7 @@ class KeyCredentialManager
 
     // Asynchronous function to open a credential and perform authenticated challenge.  
     template <typename AuthenticatedSessionChallengeCallback>
-    static std::future<CreatedCredential> OpenAsync(
+    static std::future<KeyCredentialRetrievalResult> OpenAsync(
         const std::wstring& credentialName,
         winrt::Windows::Security::Credentials::ChallengeResponseKind challengeResponseKind,
         AuthenticatedSessionChallengeCallback&& challengeCallback);

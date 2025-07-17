@@ -39,7 +39,7 @@ authContextBlobAndSessionKeyPtr veil_abi::VTL0_Stubs::export_interface::userboun
         5); // KeyCredentialCacheUsageCount
 
     auto sessionKeyPtr = std::make_shared<uintptr_t>(0);
-    auto credential = winrt::Windows::Security::Credentials::KeyCredentialManager::RequestCreateAsync(
+    auto credentialResult = winrt::Windows::Security::Credentials::KeyCredentialManager::RequestCreateAsync(
         key_name,
         KeyCredentialCreationOption::FailIfExists,
         algorithm,
@@ -51,10 +51,19 @@ authContextBlobAndSessionKeyPtr veil_abi::VTL0_Stubs::export_interface::userboun
         {
             auto enclaveInterface = veil_abi::VTL0_Stubs::export_interface(nullptr);
             auto attestationReportAndSessionKeyPtr = enclaveInterface.userboundkey_get_attestation_report(challenge);  // !!! call into enclave !!!
-            *sessionKeyPtr = attestationReportAndSessionKeyPtr.sessionKey;
+            *sessionKeyPtr = attestationReportAndSessionKeyPtr.sessionKeyPtr;
             return attestationReportAndSessionKeyPtr.attestationReport;
         }
     ).get();
+
+    // Check if the operation was successful
+    auto status = credentialResult.GetStatus();
+    if (!SUCCEEDED(status))
+    {
+        THROW_HR(status);
+    }
+
+    const auto& credential = credentialResult.GetCredential();
 
     authContextBlobAndSessionKeyPtr result;
     result.authContextBlob = credential.RetrieveAuthorizationContext();
@@ -69,17 +78,26 @@ secretAndAuthorizationContextAndSessionKeyPtr veil_abi::VTL0_Stubs::export_inter
     uintptr_t windowId)
 {
     auto sessionKeyPtr = std::make_shared<uintptr_t>(0);
-    auto credential = winrt::Windows::Security::Credentials::KeyCredentialManager::OpenAsync(
+    auto credentialResult = winrt::Windows::Security::Credentials::KeyCredentialManager::OpenAsync(
         key_name.c_str(),
         winrt::Windows::Security::Credentials::ChallengeResponseKind::VirtualizationBasedSecurityEnclave,
         [sessionKeyPtr] (const auto& challenge) mutable
         {
             auto enclaveInterface = veil_abi::VTL0_Stubs::export_interface(nullptr);
             auto attestationReportAndSessionKeyPtr = enclaveInterface.userboundkey_get_attestation_report(challenge);  // !!! call into enclave !!!
-            *sessionKeyPtr = attestationReportAndSessionKeyPtr.sessionKey;
+            *sessionKeyPtr = attestationReportAndSessionKeyPtr.sessionKeyPtr;
             return attestationReportAndSessionKeyPtr.attestationReport;
         }
     ).get();
+
+    // Check if the operation was successful
+    auto status = credentialResult.GetStatus();
+    if (!SUCCEEDED(status))
+    {
+        THROW_HR(status);
+    }
+
+    const auto& credential = credentialResult.GetCredential();
 
     auto authorizationContext = credential.RetrieveAuthorizationContext();
     auto secret = credential.RequestDeriveSharedSecretAsync(message, ephemeralPublicKeyBytes, (winrt::Windows::UI::WindowId)windowId).get();
