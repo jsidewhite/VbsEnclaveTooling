@@ -29,11 +29,11 @@ typedef HANDLE USER_BOUND_KEY_AUTH_CONTEXT_HANDLE;
 BOOL CloseUserBoundKeyAuthContextHandle(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE handle);
 
-typedef struct _CACHE_CONFIG {
+typedef struct _KEY_CREDENTIAL_CACHE_CONFIG {
     UINT32 cacheType;
     UINT32 cacheTimeout; // in seconds
     UINT32 cacheCallCount;
-} CACHE_CONFIG;
+} KEY_CREDENTIAL_CACHE_CONFIG;
 
 typedef enum _USER_BOUND_KEY_AUTH_CONTEXT_PROPERTIES {
     UserBoundKeyAuthContextPropertyCacheConfig = 0, // The cache configuration for the user bound key, encoded as a CACHE_CONFIG structure

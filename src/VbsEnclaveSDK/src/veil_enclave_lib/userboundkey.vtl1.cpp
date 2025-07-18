@@ -104,7 +104,7 @@ namespace veil::vtl1::userboundkey
 
     wil::secure_vector<uint8_t> enclave_create_user_bound_key(
         const std::wstring& keyName,
-        CACHE_CONFIG& cacheConfig,
+        KEY_CREDENTIAL_CACHE_CONFIG& cacheConfig,
         const std::wstring& message,
         HWND windowId,
         ENCLAVE_SEALING_IDENTITY_POLICY sealingPolicy)
@@ -146,7 +146,7 @@ namespace veil::vtl1::userboundkey
 
     std::vector<uint8_t> enclave_load_user_bound_key(
         const std::wstring& keyName,
-        CACHE_CONFIG& cacheConfig,
+        KEY_CREDENTIAL_CACHE_CONFIG& cacheConfig,
         const std::wstring& message,
         HWND windowId,
         std::vector<uint8_t>& sealedBoundKeyBytes)
