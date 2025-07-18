@@ -32,12 +32,12 @@ namespace winrt::Windows::Security::Credentials
 struct KeyCredentialCacheConfiguration  
 {  
     KeyCredentialCacheOption option;  
-    uint32_t timeoutSeconds;  
+    winrt::Windows::Foundation::TimeSpan timeoutSeconds;  
     uint32_t usageCount;  
 
     KeyCredentialCacheConfiguration(  
         KeyCredentialCacheOption opt,  
-        uint32_t timeout,  
+        winrt::Windows::Foundation::TimeSpan timeout,
         uint32_t usage)  
         : option(opt), timeoutSeconds(timeout), usageCount(usage)  
     {}  

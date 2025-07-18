@@ -31,7 +31,7 @@ BOOL CloseUserBoundKeyAuthContextHandle(
 
 typedef struct _CACHE_CONFIG {
     UINT32 cacheType;
-    UINT32 cacheTimeout;
+    UINT32 cacheTimeout; // in seconds
     UINT32 cacheCallCount;
 } CACHE_CONFIG;
 

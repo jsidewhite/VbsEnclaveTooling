@@ -33,9 +33,10 @@ authContextBlobAndSessionKeyPtr veil_abi::VTL0_Stubs::export_interface::userboun
 {
     auto algorithm = GetAlgorithm(ecdhAlgorithm);
 
+    winrt::Windows::Foundation::TimeSpan timeout = winrt::Windows::Foundation::TimeSpan {3000000000};   // 5 mins
     auto cacheConfiguration = KeyCredentialCacheConfiguration(
         KeyCredentialCacheOption::NoCache,
-        300, // KeyCredentialCacheTimeout
+        timeout, // KeyCredentialCacheTimeout
         5); // KeyCredentialCacheUsageCount
 
     auto sessionKeyPtr = std::make_shared<uintptr_t>(0);
