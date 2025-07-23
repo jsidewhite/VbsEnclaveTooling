@@ -23,7 +23,7 @@ namespace fs = std::filesystem;
 
 int EncryptData(
     void* enclave,
-    const std::wstring& inputData)
+    const std::wstring& inputData) // TODO: std::vector<uint8_t> (blob)?
 {
 
     std::wstring helloKeyName = L"MyEncryptionKey-001";
@@ -32,7 +32,7 @@ int EncryptData(
     //
     // [Create flow]
     // 
-    //  Generate secured key in enclave, then pass the encrypted key bytes to vtl0
+    //  Generate secured key in enclave, then pass the encrypted key bytes back to vtl0
     //
 
     // Initialize enclave interface
@@ -41,14 +41,26 @@ int EncryptData(
 
     HWND hCurWnd = GetForegroundWindow(); // TODO: Is this correct?
 
-    // TODO: Do we fork between a Create flow and a Load flow here? 
+    // TODO: Do we fork between a Create flow and a Load flow here? Not every Encrypt flow needs to create a new key, some may just load an existing one?
+    
+    // ***Create keyCredentialCacheConfiguration object
+    /*
+    Windows::Foundation::TimeSpan timeout = {};
+    timeout.Duration = 5 * 60 * 10000000LL; // 5 minutes in 100ns units
+    THROW_IF_FAILED(cacheConfigFactory->CreateInstance(
+        KeyCredentialCacheOption_NoCache,
+        timeout, // TimeSpan timeout
+        5, // usageCount
+        &keyCredentialCacheConfiguration));
+    */
 
     // Call into enclave
     auto securedEncryptionKeyBytes = std::vector<uint8_t> {};
     THROW_IF_FAILED(enclaveInterface.EnclaveCreateUserBoundKey(
         helloKeyName,
         pinMessage,
-        hCurWnd
+        hCurWnd,
+        keyCredentialCacheConfiguration,
         securedEncryptionKeyBytes));
 
     // We now have our encryption key's bytes, which are sealed!
@@ -74,6 +86,7 @@ int EncryptData(
         helloKeyName,
         pinMessage,
         hCurWnd,
+        keyCredentialCacheConfiguration,
         securedEncryptionKeyBytes,
         inputData,
         encryptedInputBytes,

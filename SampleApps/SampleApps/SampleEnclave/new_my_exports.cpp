@@ -21,6 +21,7 @@ HRESULT VbsEnclave::VTL1_Declarations::EnclaveCreateUserBoundKey(
     _In_ const std::wstring& helloKeyName,
     _In_ const std::wstring& pinMessage,
     _In_ HWND windowId,
+    _In_ KEY_CREDENTIAL_CACHE_CONFIG keyCredentialCacheConfiguration,
     _Out_ std::vector<std::uint8_t>& securedEncryptionKeyBytes)
 {
     using namespace veil::vtl1::vtl0_functions;
@@ -29,7 +30,7 @@ HRESULT VbsEnclave::VTL1_Declarations::EnclaveCreateUserBoundKey(
 
     securedEncryptionKeyBytes = veil::vtl1::userboundkey::enclave_create_user_bound_key(
         helloKeyName,
-        KEY_CREDENTIAL_CACHE_CONFIG {}, // TODO: is this needed? Because we are creating it in userboundkey_establish_session_for_create_callback
+        keyCredentialCacheConfiguration, // TODO: is this needed?
         pinMessage,
         windowId,
         ENCLAVE_SEALING_IDENTITY_POLICY::ENCLAVE_IDENTITY_POLICY_SEAL_EXACT_CODE);
@@ -41,8 +42,9 @@ HRESULT VbsEnclave::VTL1_Declarations::EnclaveLoadUserBoundKeyAndEncryptData(
     _In_ const std::wstring& helloKeyName,
     _In_ const std::wstring& pinMessage,
     _In_ HWND windowId,
+    _In_ KEY_CREDENTIAL_CACHE_CONFIG keyCredentialCacheConfiguration,
     _In_ const std::vector<std::uint8_t>& securedEncryptionKeyBytes,
-    _In_ const std::wstring& dataToEncrypt,
+    _In_ const std::wstring& inputData,
     _Out_  std::vector<std::uint8_t>& encryptedInputBytes,
     _Out_  std::vector<std::uint8_t>& tag)
 {
@@ -51,7 +53,7 @@ HRESULT VbsEnclave::VTL1_Declarations::EnclaveLoadUserBoundKeyAndEncryptData(
     // if (!IsUserBoundKeyLoaded()) TODO?
     auto encryptionKey = veil::vtl1::userboundkey::enclave_load_user_bound_key(
         helloKeyName,
-        KEY_CREDENTIAL_CACHE_CONFIG {}, // TODO: is this needed?
+        keyCredentialCacheConfiguration, // TODO: is this needed?
         pinMessage,
         windowId,
         securedEncryptionKeyBytes);
@@ -61,10 +63,7 @@ HRESULT VbsEnclave::VTL1_Declarations::EnclaveLoadUserBoundKeyAndEncryptData(
     //
 
     // Encrypting the user input data
-    auto const inputData = dataToEncrypt.c_str();
-
-    // Let's encrypt the input text
-    auto [encryptedText, encryptionTag] = veil::vtl1::crypto::encrypt(encryptionKey.get(), veil::vtl1::as_data_span(inputData), veil::vtl1::crypto::zero_nonce);
+    auto [encryptedText, encryptionTag] = veil::vtl1::crypto::encrypt(encryptionKey.get(), veil::vtl1::as_data_span(inputData.c_str()), veil::vtl1::crypto::zero_nonce);
 
     // Return the encrypted input to vtl0 host caller...
     encryptedInputBytes.assign(encryptedText.begin(), encryptedText.end());
