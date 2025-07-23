@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\Microsoft.Windows.SDK.CPP.x64.10.0.26100.3916\build\native\Microsoft.Windows.SDK.cpp.x64.props" Condition="Exists('..\packages\Microsoft.Windows.SDK.CPP.x64.10.0.26100.3916\build\native\Microsoft.Windows.SDK.cpp.x64.props')" />
   <Import Project="..\packages\Microsoft.Windows.SDK.CPP.arm64.10.0.26100.3916\build\native\Microsoft.Windows.SDK.cpp.arm64.props" Condition="Exists('..\packages\Microsoft.Windows.SDK.CPP.arm64.10.0.26100.3916\build\native\Microsoft.Windows.SDK.cpp.arm64.props')" />
@@ -145,6 +145,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="new_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
