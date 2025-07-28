@@ -116,7 +116,6 @@ namespace veil::vtl1::userboundkey
         // AUTH CONTEXT
         unique_auth_context_handle authContext;
         THROW_IF_FAILED(GetUserBoundKeyCreationAuthContext(
-            keyName.c_str(),
             authContextBlobAndSessionKeyPtr.sessionKeyPtr,
             authContextBlob.data(),
             static_cast<UINT32>(authContextBlob.size()),
@@ -129,7 +128,7 @@ namespace veil::vtl1::userboundkey
         propCacheConfig.size = sizeof(cacheConfig);
         propCacheConfig.value = &cacheConfig;
 
-        THROW_IF_FAILED(ValidateUserBoundKeyAuthContext(authContext.get(), 1, &propCacheConfig)); // OS CALL
+        THROW_IF_FAILED(ValidateUserBoundKeyAuthContext(keyName.c_str(), authContext.get(), 1, &propCacheConfig)); // OS CALL
 
         // USERKEY
         auto userkeyBytes = veil::vtl1::crypto::generate_symmetric_key_bytes();
@@ -166,7 +165,6 @@ namespace veil::vtl1::userboundkey
         // AUTH CONTEXT
         unique_auth_context_handle authContext;
         THROW_IF_FAILED(GetUserBoundKeyLoadingAuthContext(
-            keyName.c_str(),
             sessionKeyPtr,
             authContextBlob.data(),
             static_cast<UINT32>(authContextBlob.size()),
@@ -177,7 +175,7 @@ namespace veil::vtl1::userboundkey
         propCacheConfig.name = UserBoundKeyAuthContextPropertyCacheConfig;
         propCacheConfig.size = sizeof(cacheConfig);
         propCacheConfig.value = &cacheConfig;
-        THROW_IF_FAILED(ValidateUserBoundKeyAuthContext(authContext.get(), 1, &propCacheConfig)); // OS CALL
+        THROW_IF_FAILED(ValidateUserBoundKeyAuthContext(keyName.c_str(), authContext.get(), 1, &propCacheConfig)); // OS CALL
 
         // DECRYPT USERKEY
         UINT32 cbUserkeyBytes = 0;

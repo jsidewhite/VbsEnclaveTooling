@@ -24,7 +24,7 @@ HRESULT InitializeUserBoundKeySessionInfo(
 );
 
 // Auth Context APIs
-typedef HANDLE USER_BOUND_KEY_AUTH_CONTEXT_HANDLE;
+DECLARE_HANDLE(USER_BOUND_KEY_AUTH_CONTEXT_HANDLE);
 
 BOOL CloseUserBoundKeyAuthContextHandle(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE handle);
@@ -40,12 +40,8 @@ typedef enum _USER_BOUND_KEY_AUTH_CONTEXT_PROPERTIES {
 } USER_BOUND_KEY_AUTH_CONTEXT_PROPERTIES;
 
 // Called as part of the flow when creating a new user bound key.
-// Decrypts the auth context blob provided by NGC, verifies that the keyname matches the one in the auth context blob,
-// Performs key establishment using the enclave key handle provided, along with the
-// corresponding key from the NGC side (present in the auth context blob).
-// Computes the key encryption key (KEK) for the user bound key.
+// Decrypts the auth context blob provided by NGC and returns a handle to the decrypted blob
 HRESULT GetUserBoundKeyCreationAuthContext(
-    _In_ PCWSTR keyName,
     _In_ UINT_PTR sessionKeyPtr,
     _In_reads_bytes_(authContextBlobSize) const void* authContextBlob, // auth context generated as part of RequestCreateAsync
     _In_ UINT32 authContextBlobSize,
@@ -55,7 +51,6 @@ HRESULT GetUserBoundKeyCreationAuthContext(
 // Called as part of the flow when loading an existing user bound key.
 // Decrypts the auth context blob provided by NGC, verifies that the keyname matches the one in the auth context blob.
 HRESULT GetUserBoundKeyLoadingAuthContext(
-    _In_ PCWSTR keyName,
     _In_ UINT_PTR sessionKeyPtr,
     _In_reads_bytes_(authContextBlobSize) const void* authContextBlob, // auth context generated as part of RequestCreateAsync 
     _In_ UINT32 authContextBlobSize,
@@ -69,12 +64,18 @@ typedef struct _USER_BOUND_KEY_AUTH_CONTEXT_PROPERTY
     _Field_size_bytes_(size) void* value;
 } USER_BOUND_KEY_AUTH_CONTEXT_PROPERTY;
 
+// Verifies that the keyname matches the one in the auth context blob, 
+// and validates cacheConfig, IsSecureIdOwnerId, publicKeyBytes
 HRESULT ValidateUserBoundKeyAuthContext(
+    _In_ PCWSTR keyName,
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContextHandle,
     _In_ UINT32 count,
     _In_reads_(count) const USER_BOUND_KEY_AUTH_CONTEXT_PROPERTY* values
 );
 
+// Performs key establishment using the enclave key handle provided, along with the
+// corresponding key from the NGC side (present in the auth context blob).
+// Computes the key encryption key (KEK) for the user bound key.
 // Encrypt the user key and produce material to save to disk
 HRESULT ProtectUserBoundKey(
     _In_ USER_BOUND_KEY_AUTH_CONTEXT_HANDLE authContext,
